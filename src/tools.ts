@@ -1,9 +1,11 @@
 import { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { OnspringClient } from "onspring-api-sdk";
+import { App, OnspringClient, PagingRequest } from "onspring-api-sdk";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
-    throw new Error("Unable to create checkConnectionTool because client is not set");
+    throw new Error(
+      "Unable to create checkConnectionTool because client is not set",
+    );
   }
 
   return async () => {
@@ -16,6 +18,8 @@ export function checkConnectionTool(client: OnspringClient): ToolCallback {
         ],
       };
     } catch (error) {
+      console.error(error);
+
       let errorMessage = "Unable to connect to Onspring";
 
       if (error instanceof Error && error.message) {
@@ -23,6 +27,7 @@ export function checkConnectionTool(client: OnspringClient): ToolCallback {
       }
 
       return {
+        isError: true,
         content: [{ type: "text", text: errorMessage }],
       };
     }
@@ -36,16 +41,26 @@ export function getAppsTool(client: OnspringClient): ToolCallback {
 
   return async () => {
     try {
-      const appsResponse = await client.getApps();
+      const apps: App[] = [];
+      const pagingRequest = new PagingRequest(1, 100);
+      let totalPages = 1;
 
-      if (appsResponse.isSuccessful === false || appsResponse.data === null) {
-        throw new Error(
-          `Unable to get apps: ${appsResponse.message} (${appsResponse.statusCode})`,
-        );
-      }
+      do {
+        const appsResponse = await client.getApps(pagingRequest);
+
+        if (appsResponse.isSuccessful === false || appsResponse.data === null) {
+          throw new Error(`${appsResponse.message} (${appsResponse.statusCode})`);
+        }
+
+        apps.push(...appsResponse.data.items);
+        pagingRequest.pageNumber++;
+        totalPages = appsResponse.data.totalPages;
+      } while (pagingRequest.pageNumber <= totalPages);
 
       return {
-        content: [{ type: "text", text: JSON.stringify(appsResponse.data.items) }],
+        content: [
+          { type: "text", text: JSON.stringify(apps) },
+        ],
       };
     } catch (error) {
       console.error(error);
@@ -57,6 +72,7 @@ export function getAppsTool(client: OnspringClient): ToolCallback {
       }
 
       return {
+        isError: true,
         content: [{ type: "text", text: errorMessage }],
       };
     }

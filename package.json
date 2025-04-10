@@ -16,7 +16,7 @@
     "test:ui": "vitest --ui --api 9527",
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -w -p tsconfig.build.json",
-    "inspect": "npx @modelcontextprotocol/inspector node ./build/index.js"
+    "inspect": "npx @modelcontextprotocol/inspector node --env-file ./.env ./build/index.js"
   },
   "keywords": [],
   "author": "",
