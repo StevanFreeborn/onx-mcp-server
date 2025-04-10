@@ -13,8 +13,10 @@
   "scripts": {
     "start": "node build/index.js",
     "test": "vitest",
+    "test:ui": "vitest --ui --api 9527",
     "build": "tsc -p tsconfig.build.json",
-    "dev": "tsc -w -p tsconfig.build.json"
+    "dev": "tsc -w -p tsconfig.build.json",
+    "inspect": "npx @modelcontextprotocol/inspector node ./build/index.js"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "@vitest/ui": "^3.1.1",
     "typescript": "^5.8.2",
     "vitest": "^3.1.1"
   }
