@@ -1,7 +1,7 @@
 {
   "name": "onx-mcp-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "A server for the Model Context Protocol (MCP) that integrates with Onspring's API.",
   "main": "index.js",
   "type": "module",
   "bin": {
@@ -16,10 +16,14 @@
     "test:ui": "vitest --ui --api 9527",
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -w -p tsconfig.build.json",
-    "inspect": "npx @modelcontextprotocol/inspector node --env-file ./.env ./build/index.js"
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node --env-file ./.env ./build/index.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "modelcontextprotocol",
+    "onspring",
+    "server"
+  ],
+  "author": "Stevan Freeborn",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",

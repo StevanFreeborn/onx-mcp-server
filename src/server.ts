@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { checkConnectionTool, getAppsTool } from "./tools.js";
+import { checkConnectionTool, getAppsTool, getFieldsTool } from "./tools.js";
 import { createOnspringClient } from "./utils.js";
+import { z } from "zod";
 
 const server = new McpServer({
   name: "onx-mcp-server",
@@ -11,14 +12,24 @@ const client = createOnspringClient();
 
 server.tool(
   "check-onspring-connection",
-  "A tool that allows you to check if you can connect to an Onspring instance",
-  checkConnectionTool(client)
+  "Checks if you can connect to the Onspring instance",
+  checkConnectionTool(client),
 );
 
 server.tool(
   "get-apps",
-  "A tool that allows you to get a list of apps from an Onspring instance",
-  getAppsTool(client)
+  "Retrieves a list of apps from the Onspring instance",
+  getAppsTool(client),
+);
+
+server.tool(
+  "get-fields",
+  "Retrieves a list of fields from the Onspring instance for a particular app",
+  { appName: z.string().min(1, "App name is required") },
+  ({ appName }, req) => {
+    const tool = getFieldsTool(client, appName);
+    return tool(req);
+  },
 );
 
 export { server };

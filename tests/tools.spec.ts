@@ -186,10 +186,7 @@ describe("getAppsTool", () => {
       content: [
         {
           type: "text",
-          text: JSON.stringify([
-            { id: 1, name: "App 1" },
-            { id: 2, name: "App 2" },
-          ]),
+          text: JSON.stringify(["App 1", "App 2"]),
         },
       ],
     });
@@ -232,13 +229,19 @@ describe("getAppsTool", () => {
         {
           type: "text",
           text: JSON.stringify([
-            { id: 1, name: "App 1" },
-            { id: 2, name: "App 2" },
-            { id: 3, name: "App 3" },
-            { id: 4, name: "App 4" },
+            "App 1",
+            "App 2",
+            "App 3",
+            "App 4",
           ]),
         },
       ],
     });
   });
 });
+
+describe("getFieldsTool", () => {});
+
+
+
+
