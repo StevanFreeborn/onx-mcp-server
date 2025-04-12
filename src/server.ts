@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { checkConnectionTool, getAppsTool, getFieldsTool } from "./tools.js";
+import { checkConnectionTool, getAppsTool, getFieldsTool, getRecordsTool } from "./tools.js";
 import { createOnspringClient } from "./utils.js";
 import { z } from "zod";
 
@@ -30,6 +30,19 @@ server.tool(
     const tool = getFieldsTool(client, appName);
     return tool(req);
   },
+);
+
+server.tool(
+  "get-records", 
+  "Retrieves a list of records from an app or survey in the Onspring instance", 
+  {
+    appName: z.string().min(1, "App name is required"),
+    fields: z.array(z.string()).min(1, "At least one field is required"),
+  }, 
+  ({ appName, fields }, req) => {
+    const tool = getRecordsTool(client, appName, fields);
+    return tool(req);
+  }
 );
 
 export { server };

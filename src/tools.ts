@@ -1,6 +1,14 @@
 import { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { App, OnspringClient, PagingRequest } from "onspring-api-sdk";
-import { z, ZodRawShape } from "zod";
+import {
+  DataFormat,
+  FormulaField,
+  GetRecordsByAppIdRequest,
+  ListField,
+  OnspringClient,
+  PagingRequest,
+  Record,
+} from "onspring-api-sdk";
+import { getApps, getFields } from "./utils.js";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
@@ -78,26 +86,33 @@ export function getFieldsTool(
 
   return async () => {
     try {
-      let appId: number | undefined;
-
-      for await (const app of getApps(client)) {
-        if (app.name.toLowerCase() === name.toLowerCase()) {
-          appId = app.id;
-          break;
-        }
-      }
-
-      if (!appId) {
-        return {
-          isError: true,
-          content: [{ type: "text", text: `App ${name} not found` }],
-        };
-      }
-
-      const fields: string[] = [];
+      const appId = await getAppId(client, name);
+      const fields: { name: string; type: string; id: number }[] = [];
 
       for await (const field of getFields(client, appId)) {
-        fields.push(field.name);
+        if (field instanceof ListField) {
+          fields.push({
+            id: field.id,
+            name: field.name,
+            type: `${field.multiplicity} ${field.type}`,
+          });
+          continue;
+        }
+
+        if (field instanceof FormulaField) {
+          fields.push({
+            id: field.id,
+            name: field.name,
+            type: `${field.outputType} ${field.type}`,
+          });
+          continue;
+        }
+
+        fields.push({
+          id: field.id,
+          name: field.name,
+          type: field.type,
+        });
       }
 
       return {
@@ -125,38 +140,86 @@ export function getFieldsTool(
   };
 }
 
-async function* getApps(client: OnspringClient) {
-  const pagingRequest = new PagingRequest(1, 100);
-  let totalPages = 1;
+export function getRecordsTool(
+  client: OnspringClient,
+  appName: string,
+  fields: string[],
+): ToolCallback {
+  if (!client) {
+    throw new Error(
+      "Unable to create getRecordsTool because client is not set",
+    );
+  }
 
-  do {
-    const appsResponse = await client.getApps(pagingRequest);
+  return async () => {
+    const appId = await getAppId(client, appName);
 
-    if (appsResponse.isSuccessful === false || appsResponse.data === null) {
-      throw new Error(`${appsResponse.message} (${appsResponse.statusCode})`);
-    }
+    // TODO: Do I care if fields are not found? IDK
+    // TODO: Do I care if no fields are found? IDK
+    const fieldIds = await getFieldIds(client, appId, fields);
 
-    yield* appsResponse.data.items;
-    pagingRequest.pageNumber++;
-    totalPages = appsResponse.data.totalPages;
-  } while (pagingRequest.pageNumber <= totalPages);
+    const records: Record[] = [];
+    const recordsPagingRequest = new PagingRequest(1, 100);
+    let totalRecordPages = 0;
+
+    do {
+      const request = new GetRecordsByAppIdRequest(
+        appId,
+        fieldIds,
+        DataFormat.Formatted,
+        recordsPagingRequest,
+      );
+
+      const recordsResponse = await client.getRecordsByAppId(request);
+
+      if (
+        recordsResponse.isSuccessful === false ||
+        recordsResponse.data === null
+      ) {
+        throw new Error(
+          `Unable to get records for app ${appName} with fields ${fields}`,
+        );
+      }
+
+      records.push(...recordsResponse.data.items);
+      totalRecordPages = recordsResponse.data.totalPages;
+      recordsPagingRequest.pageNumber++;
+    } while (recordsPagingRequest.pageNumber <= totalRecordPages);
+    
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(records),
+        },
+      ],
+    };
+  };
 }
 
-async function* getFields(client: OnspringClient, appId: number) {
-  const pagingRequest = new PagingRequest(1, 100);
-  let totalPages = 1;
-
-  do {
-    const fieldsResponse = await client.getFieldsByAppId(appId, pagingRequest);
-
-    if (fieldsResponse.isSuccessful === false || fieldsResponse.data === null) {
-      throw new Error(
-        `${fieldsResponse.message} (${fieldsResponse.statusCode})`,
-      );
+async function getAppId(client: OnspringClient, appName: string) {
+  for await (const app of getApps(client)) {
+    if (app.name.toLowerCase() === appName.toLowerCase()) {
+      return app.id;
     }
+  }
 
-    yield* fieldsResponse.data.items;
-    pagingRequest.pageNumber++;
-    totalPages = fieldsResponse.data.totalPages;
-  } while (pagingRequest.pageNumber <= totalPages);
+  throw new Error(`App ${appName} not found`);
+}
+
+async function getFieldIds(
+  client: OnspringClient,
+  appId: number,
+  fields: string[],
+) {
+  const normalizedFields = fields.map((field) => field.toLowerCase());
+  const fieldIds: number[] = [];
+
+  for await (const field of getFields(client, appId)) {
+    if (normalizedFields.includes(field.name.toLowerCase())) {
+      fieldIds.push(field.id);
+    }
+  }
+
+  return fieldIds;
 }
