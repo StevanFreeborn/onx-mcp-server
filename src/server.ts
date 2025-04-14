@@ -38,9 +38,11 @@ server.tool(
   {
     appName: z.string().min(1, "App name is required"),
     fields: z.array(z.string()).min(1, "At least one field is required"),
+    pageNumber: z.number().optional().default(1),
+    numberOfPages: z.number().optional().default(1),
   }, 
-  ({ appName, fields }, req) => {
-    const tool = getRecordsTool(client, appName, fields);
+  ({ appName, fields, pageNumber, numberOfPages }, req) => {
+    const tool = getRecordsTool(client, appName, fields, pageNumber, numberOfPages);
     return tool(req);
   }
 );

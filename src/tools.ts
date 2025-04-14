@@ -8,7 +8,7 @@ import {
   PagingRequest,
   Record,
 } from "onspring-api-sdk";
-import { getApps, getFields } from "./utils.js";
+import { getApps, getFields, getRecords } from "./utils.js";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
@@ -140,10 +140,25 @@ export function getFieldsTool(
   };
 }
 
+type OnxRecord = {
+  recordId: number;
+  data: {
+    [key: string]: string | number | boolean | null;
+  };
+};
+
+type GetRecordsToolResponse = {
+  appId: number;
+  records: OnxRecord[];
+  totalPages: number;
+};
+
 export function getRecordsTool(
   client: OnspringClient,
   appName: string,
   fields: string[],
+  pageNumber: number,
+  numberOfPages: number,
 ): ToolCallback {
   if (!client) {
     throw new Error(
@@ -152,48 +167,71 @@ export function getRecordsTool(
   }
 
   return async () => {
-    const appId = await getAppId(client, appName);
-
-    // TODO: Do I care if fields are not found? IDK
-    // TODO: Do I care if no fields are found? IDK
-    const fieldIds = await getFieldIds(client, appId, fields);
-
-    const records: Record[] = [];
-    const recordsPagingRequest = new PagingRequest(1, 100);
-    let totalRecordPages = 0;
-
-    do {
-      const request = new GetRecordsByAppIdRequest(
-        appId,
-        fieldIds,
-        DataFormat.Formatted,
-        recordsPagingRequest,
+    try {
+      const appId = await getAppId(client, appName);
+      // TODO: Do I care if fields are not found? IDK
+      // TODO: Do I care if no fields are found? IDK
+      const requestedFields = await getFieldsByName(client, appId, fields);
+      const requestedFieldIds = Object.keys(requestedFields).map((key) =>
+        parseInt(key, 10),
       );
+      const response: GetRecordsToolResponse = {
+        appId: appId,
+        records: [],
+        totalPages: 0,
+      };
+      
+      // TODO: Need to return the total number of pages
+      for await (const record of getRecords(
+        client,
+        appId,
+        requestedFieldIds,
+        pageNumber,
+        numberOfPages,
+      )) {
+        const onxRecords: OnxRecord[] = [];
 
-      const recordsResponse = await client.getRecordsByAppId(request);
+        if (record.recordId === null) {
+          continue;
+        }
 
-      if (
-        recordsResponse.isSuccessful === false ||
-        recordsResponse.data === null
-      ) {
-        throw new Error(
-          `Unable to get records for app ${appName} with fields ${fields}`,
-        );
+        const onxRecord: OnxRecord = {
+          recordId: record.recordId,
+          data: {},
+        };
+
+        for (const fieldValue of record.fieldData) {
+          const fieldName = requestedFields[fieldValue.fieldId];
+          onxRecord.data[fieldName] = fieldValue.value;
+        }
+
+        onxRecords.push(onxRecord);
+
+        response.records.push(...onxRecords);
       }
 
-      records.push(...recordsResponse.data.items);
-      totalRecordPages = recordsResponse.data.totalPages;
-      recordsPagingRequest.pageNumber++;
-    } while (recordsPagingRequest.pageNumber <= totalRecordPages);
-    
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(records),
-        },
-      ],
-    };
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response),
+          },
+        ],
+      };
+    } catch (error) {
+      console.error(error);
+
+      let errorMessage = "Unable to get records";
+
+      if (error instanceof Error && error.message) {
+        errorMessage = errorMessage + ": " + error.message;
+      }
+
+      return {
+        isError: true,
+        content: [{ type: "text", text: errorMessage }],
+      };
+    }
   };
 }
 
@@ -207,19 +245,19 @@ async function getAppId(client: OnspringClient, appName: string) {
   throw new Error(`App ${appName} not found`);
 }
 
-async function getFieldIds(
+async function getFieldsByName(
   client: OnspringClient,
   appId: number,
   fields: string[],
 ) {
   const normalizedFields = fields.map((field) => field.toLowerCase());
-  const fieldIds: number[] = [];
+  const foundFields: { [index: number]: string } = {};
 
   for await (const field of getFields(client, appId)) {
     if (normalizedFields.includes(field.name.toLowerCase())) {
-      fieldIds.push(field.id);
+      foundFields[field.id] = field.name;
     }
   }
 
-  return fieldIds;
+  return foundFields;
 }
