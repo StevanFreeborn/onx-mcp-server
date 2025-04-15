@@ -8,7 +8,7 @@ import {
   PagingRequest,
   Record,
 } from "onspring-api-sdk";
-import { getApps, getFields, getRecords } from "./utils.js";
+import { getApps, getFields, getRecords, getReports } from "./utils.js";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
@@ -180,9 +180,8 @@ export function getRecordsTool(
         records: [],
         totalPages: 0,
       };
-      
-      // TODO: Need to return the total number of pages
-      for await (const record of getRecords(
+
+      for await (const page of getRecords(
         client,
         appId,
         requestedFieldIds,
@@ -191,21 +190,24 @@ export function getRecordsTool(
       )) {
         const onxRecords: OnxRecord[] = [];
 
-        if (record.recordId === null) {
-          continue;
+        for (const record of page.records) {
+          if (record.recordId === null) {
+            continue;
+          }
+
+          const onxRecord: OnxRecord = {
+            recordId: record.recordId,
+            data: {},
+          };
+
+          for (const fieldValue of record.fieldData) {
+            const fieldName = requestedFields[fieldValue.fieldId];
+            onxRecord.data[fieldName] = fieldValue.value;
+          }
+
+          onxRecords.push(onxRecord);
+          response.totalPages = page.totalPages;
         }
-
-        const onxRecord: OnxRecord = {
-          recordId: record.recordId,
-          data: {},
-        };
-
-        for (const fieldValue of record.fieldData) {
-          const fieldName = requestedFields[fieldValue.fieldId];
-          onxRecord.data[fieldName] = fieldValue.value;
-        }
-
-        onxRecords.push(onxRecord);
 
         response.records.push(...onxRecords);
       }
@@ -233,6 +235,49 @@ export function getRecordsTool(
       };
     }
   };
+}
+
+export function getReportsTool(client: OnspringClient, appName: string): ToolCallback {
+  if (!client) {
+    throw new Error(
+      "Unable to create getReportsTool because client is not set",
+    );
+  }
+
+  return async () => {
+    try {
+      const appId = await getAppId(client, appName);
+      const reports: string[] = [];
+
+      for await (const report of getReports(client, appId)) {
+        reports.push(report.name);
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(reports),
+          },
+        ],
+      };
+    } catch (error) {
+      console.error(error);
+      
+      console.error(error);
+
+      let errorMessage = "Unable to get reports";
+
+      if (error instanceof Error && error.message) {
+        errorMessage = errorMessage + ": " + error.message;
+      }
+
+      return {
+        isError: true,
+        content: [{ type: "text", text: errorMessage }],
+      };
+    }
+  }
 }
 
 async function getAppId(client: OnspringClient, appName: string) {

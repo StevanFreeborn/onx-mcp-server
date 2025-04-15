@@ -109,8 +109,32 @@ export async function* getRecords(
       );
     }
 
-    yield* recordsResponse.data.items;
     totalRecordPages = recordsResponse.data.totalPages;
+    // TODO: This feels stupid Stevan...think about
+    // a better way.
+    yield { records: recordsResponse.data.items, totalPages: totalRecordPages };
     recordsPagingRequest.pageNumber++;
   } while (recordsPagingRequest.pageNumber <= numberOfPages);
+}
+
+export async function* getReports(
+  client: OnspringClient,
+  appId: number,
+) {
+  const pagingRequest = new PagingRequest(1, 100);
+  let totalPages = 1;
+
+  do {
+    const reportsResponse = await client.getReportsByAppId(appId, pagingRequest);
+
+    if (reportsResponse.isSuccessful === false || reportsResponse.data === null) {
+      throw new Error(
+        `${reportsResponse.message} (${reportsResponse.statusCode})`,
+      );
+    }
+
+    yield* reportsResponse.data.items;
+    pagingRequest.pageNumber++;
+    totalPages = reportsResponse.data.totalPages;
+  } while (pagingRequest.pageNumber <= totalPages);
 }
