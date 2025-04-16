@@ -2,11 +2,9 @@ import { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   DataFormat,
   FormulaField,
-  GetRecordsByAppIdRequest,
   ListField,
   OnspringClient,
-  PagingRequest,
-  Record,
+  ReportDataType,
 } from "onspring-api-sdk";
 import { getApps, getFields, getRecords, getReports } from "./utils.js";
 
@@ -143,7 +141,7 @@ export function getFieldsTool(
 type OnxRecord = {
   recordId: number;
   data: {
-    [key: string]: string | number | boolean | null;
+    [key: string]: string | null;
   };
 };
 
@@ -237,7 +235,10 @@ export function getRecordsTool(
   };
 }
 
-export function getReportsTool(client: OnspringClient, appName: string): ToolCallback {
+export function getReportsTool(
+  client: OnspringClient,
+  appName: string,
+): ToolCallback {
   if (!client) {
     throw new Error(
       "Unable to create getReportsTool because client is not set",
@@ -263,7 +264,7 @@ export function getReportsTool(client: OnspringClient, appName: string): ToolCal
       };
     } catch (error) {
       console.error(error);
-      
+
       console.error(error);
 
       let errorMessage = "Unable to get reports";
@@ -277,7 +278,77 @@ export function getReportsTool(client: OnspringClient, appName: string): ToolCal
         content: [{ type: "text", text: errorMessage }],
       };
     }
+  };
+}
+
+export function getReportDataTool(
+  client: OnspringClient,
+  appName: string,
+  reportName: string,
+  dataType: ReportDataType = ReportDataType.ReportData,
+): ToolCallback {
+  if (!client) {
+    throw new Error(
+      "Unable to create getReportDataTool because client is not set",
+    );
   }
+
+  return async () => {
+    try {
+      const appId = await getAppId(client, appName);
+      console.error("appId", appId);
+      
+      const reportId = await getReportId(client, appId, reportName);
+      console.error("reportId", reportId);
+
+      const response = await client.getReportById(
+        reportId,
+        DataFormat.Formatted,
+        dataType,
+      );
+
+      if (response.isSuccessful === false || response.data === null) {
+        throw new Error(`${response.message} (${response.statusCode})`);
+      }
+
+      const reportData: OnxRecord[] = [];
+
+      for (const row of response.data.rows) {
+        const onxRecord: OnxRecord = {
+          recordId: row.recordId,
+          data: {},
+        };
+
+        for (const [index, column] of response.data.columns.entries()) {
+          onxRecord.data[column] = row.cells[index];
+        }
+
+        reportData.push(onxRecord);
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(reportData),
+          },
+        ],
+      };
+    } catch (error) {
+      console.error(error);
+
+      let errorMessage = "Unable to get report data";
+
+      if (error instanceof Error && error.message) {
+        errorMessage = errorMessage + ": " + error.message;
+      }
+
+      return {
+        isError: true,
+        content: [{ type: "text", text: errorMessage }],
+      };
+    }
+  };
 }
 
 async function getAppId(client: OnspringClient, appName: string) {
@@ -305,4 +376,19 @@ async function getFieldsByName(
   }
 
   return foundFields;
+}
+
+async function getReportId(
+  client: OnspringClient,
+  appId: number,
+  reportName: string,
+) {
+  for await (const report of getReports(client, appId)) {
+    console.error("report", report);
+    if (report.name.toLowerCase() === reportName.toLowerCase()) {
+      return report.id;
+    }
+  }
+
+  throw new Error(`Report ${reportName} not found`);
 }

@@ -26,14 +26,14 @@
   "author": "Stevan Freeborn",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.7.0",
-    "onspring-api-sdk": "^1.0.6",
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "onspring-api-sdk": "^1.0.7",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^22.13.10",
+    "@types/node": "^22.14.1",
     "@vitest/ui": "^3.1.1",
-    "typescript": "^5.8.2",
+    "typescript": "^5.8.3",
     "vitest": "^3.1.1"
   }
 }

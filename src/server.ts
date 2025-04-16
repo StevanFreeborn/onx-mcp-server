@@ -1,7 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { checkConnectionTool, getAppsTool, getFieldsTool, getRecordsTool, getReportsTool } from "./tools.js";
+import { checkConnectionTool, getAppsTool, getFieldsTool, getRecordsTool, getReportDataTool, getReportsTool } from "./tools.js";
 import { createOnspringClient } from "./utils.js";
 import { z } from "zod";
+import { ReportDataType } from "onspring-api-sdk";
 
 const server = new McpServer({
   name: "onx-mcp-server",
@@ -55,6 +56,20 @@ server.tool(
   },
   ({ appName }, req) => {
     const tool = getReportsTool(client, appName);
+    return tool(req);
+  },
+);
+
+server.tool(
+  "get-report-data",
+  "Retrieves the data for a specific report from the Onspring instance",
+  {
+    appName: z.string().min(1, "App name is required"),
+    reportName: z.string().min(1, "Report name is required"),
+    dataType: z.enum([ReportDataType.ReportData, ReportDataType.ChartData]).default(ReportDataType.ReportData),
+  },
+  ({ appName, reportName, dataType }, req) => {
+    const tool = getReportDataTool(client, appName, reportName, dataType);
     return tool(req);
   },
 );
