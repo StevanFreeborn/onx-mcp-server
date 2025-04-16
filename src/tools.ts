@@ -296,11 +296,7 @@ export function getReportDataTool(
   return async () => {
     try {
       const appId = await getAppId(client, appName);
-      console.error("appId", appId);
-      
       const reportId = await getReportId(client, appId, reportName);
-      console.error("reportId", reportId);
-
       const response = await client.getReportById(
         reportId,
         DataFormat.Formatted,
@@ -338,6 +334,44 @@ export function getReportDataTool(
       console.error(error);
 
       let errorMessage = "Unable to get report data";
+
+      if (error instanceof Error && error.message) {
+        errorMessage = errorMessage + ": " + error.message;
+      }
+
+      return {
+        isError: true,
+        content: [{ type: "text", text: errorMessage }],
+      };
+    }
+  };
+}
+
+async function queryRecordsTool(
+  client: OnspringClient,
+  appName: string,
+  fields: string[],
+  filter: {
+    fieldName: string;
+    operator: string;
+    value: string | null;
+  },
+  pageNumber: number,
+  numberOfPages: number,
+) {
+  if (!client) {
+    throw new Error(
+      "Unable to create queryRecordsTool because client is not set",
+    );
+  }
+
+  return async () => {
+    try {
+      // TODO: Implement actual logic to query records
+    } catch (error) {
+      console.error(error);
+
+      let errorMessage = "Unable to get records";
 
       if (error instanceof Error && error.message) {
         errorMessage = errorMessage + ": " + error.message;

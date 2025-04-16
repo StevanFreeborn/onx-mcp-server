@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { checkConnectionTool, getAppsTool, getFieldsTool, getRecordsTool, getReportDataTool, getReportsTool } from "./tools.js";
 import { createOnspringClient } from "./utils.js";
 import { z } from "zod";
-import { ReportDataType } from "onspring-api-sdk";
+import { FilterOperators, ReportDataType } from "onspring-api-sdk";
 
 const server = new McpServer({
   name: "onx-mcp-server",
@@ -72,6 +72,26 @@ server.tool(
     const tool = getReportDataTool(client, appName, reportName, dataType);
     return tool(req);
   },
+);
+
+server.tool(
+  "query-records",
+  "Queries records from a specific app in the Onspring instance",
+  {
+    appName: z.string().min(1, "App name is required"),
+    fields: z.array(z.string()).min(1, "At least one field is required"),
+    filters: z.object({
+      fieldName: z.string().min(1, "Field name is required"),
+      operator: z.enum(Object.values(FilterOperators) as [string, ...string[]]),
+      value: z.string().nullable().default(null),
+    }),
+    pageNumber: z.number().optional().default(1),
+    numberOfPages: z.number().optional().default(1),
+  },
+  ({ appName, fields, pageNumber, numberOfPages }, req) => {
+    const tool = queryRecordsTool(client, appName, fields, filters, pageNumber, numberOfPages);
+    return tool(req);
+  }
 );
 
 export { server };
