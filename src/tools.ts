@@ -4,9 +4,11 @@ import {
   FormulaField,
   ListField,
   OnspringClient,
+  Record,
   ReportDataType,
 } from "onspring-api-sdk";
-import { getApps, getFields, getRecords, getReports } from "./utils.js";
+import { getApps, getFields, getRecords, getReports, queryRecords } from "./utils.js";
+import { convertFilterToString, Filter } from "./filter.js";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
@@ -145,7 +147,7 @@ type OnxRecord = {
   };
 };
 
-type GetRecordsToolResponse = {
+type GetRecordsResponse = {
   appId: number;
   records: OnxRecord[];
   totalPages: number;
@@ -170,39 +172,26 @@ export function getRecordsTool(
       // TODO: Do I care if fields are not found? IDK
       // TODO: Do I care if no fields are found? IDK
       const requestedFields = await getFieldsByName(client, appId, fields);
-      const requestedFieldIds = Object.keys(requestedFields).map((key) =>
-        parseInt(key, 10),
-      );
-      const response: GetRecordsToolResponse = {
+      const requestedFieldIds = parseKeysToInts(requestedFields);
+      const response: GetRecordsResponse = {
         appId: appId,
         records: [],
         totalPages: 0,
       };
 
-      for await (const page of getRecords(
+      const pages = getRecords(
         client,
         appId,
         requestedFieldIds,
         pageNumber,
         numberOfPages,
-      )) {
+      );
+
+      for await (const page of pages) {
         const onxRecords: OnxRecord[] = [];
 
         for (const record of page.records) {
-          if (record.recordId === null) {
-            continue;
-          }
-
-          const onxRecord: OnxRecord = {
-            recordId: record.recordId,
-            data: {},
-          };
-
-          for (const fieldValue of record.fieldData) {
-            const fieldName = requestedFields[fieldValue.fieldId];
-            onxRecord.data[fieldName] = fieldValue.value;
-          }
-
+          const onxRecord = buildOnxRecord(record, requestedFields);
           onxRecords.push(onxRecord);
           response.totalPages = page.totalPages;
         }
@@ -347,18 +336,14 @@ export function getReportDataTool(
   };
 }
 
-async function queryRecordsTool(
+export function queryRecordsTool(
   client: OnspringClient,
   appName: string,
   fields: string[],
-  filter: {
-    fieldName: string;
-    operator: string;
-    value: string | null;
-  },
+  filter: Filter,
   pageNumber: number,
   numberOfPages: number,
-) {
+): ToolCallback {
   if (!client) {
     throw new Error(
       "Unable to create queryRecordsTool because client is not set",
@@ -367,7 +352,47 @@ async function queryRecordsTool(
 
   return async () => {
     try {
-      // TODO: Implement actual logic to query records
+      const appId = await getAppId(client, appName);
+      const requestedFields = await getFieldsByName(client, appId, fields);
+      const requestedFieldIds = parseKeysToInts(requestedFields);
+
+      const response: GetRecordsResponse = {
+        appId: appId,
+        records: [],
+        totalPages: 0,
+      };
+
+      const filterString = convertFilterToString(filter);
+
+      const pages = queryRecords(
+        client,
+        appId,
+        requestedFieldIds,
+        filterString,
+        pageNumber,
+        numberOfPages,
+      );
+
+      for await (const page of pages) {
+        const onxRecords: OnxRecord[] = [];
+
+        for (const record of page.records) {
+          const onxRecord = buildOnxRecord(record, requestedFields);
+          onxRecords.push(onxRecord);
+          response.totalPages = page.totalPages;
+        }
+
+        response.records.push(...onxRecords);
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response),
+          },
+        ],
+      };
     } catch (error) {
       console.error(error);
 
@@ -425,4 +450,29 @@ async function getReportId(
   }
 
   throw new Error(`Report ${reportName} not found`);
+}
+
+function buildOnxRecord(
+  record: Record,
+  requestedFields: { [index: number]: string },
+) {
+  if (record.recordId === null) {
+    throw new Error("Record ID is null");
+  }
+
+  const onxRecord: OnxRecord = {
+    recordId: record.recordId,
+    data: {},
+  };
+
+  for (const fieldValue of record.fieldData) {
+    const fieldName = requestedFields[fieldValue.fieldId];
+    onxRecord.data[fieldName] = fieldValue.value;
+  }
+
+  return onxRecord;
+}
+
+function parseKeysToInts(fields: { [index: number]: string }) {
+  return Object.keys(fields).map((key) => parseInt(key, 10));
 }

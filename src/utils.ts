@@ -1,4 +1,4 @@
-import { ApiResponse, DataFormat, GetRecordsByAppIdRequest, OnspringClient, PagedResponse, PagingRequest } from "onspring-api-sdk";
+import { ApiResponse, DataFormat, GetRecordsByAppIdRequest, OnspringClient, PagedResponse, PagingRequest, QueryRecordsRequest } from "onspring-api-sdk";
 
 export function createOnspringClient() {
   const baseUrl = process.env.BASE_URL;
@@ -137,4 +137,41 @@ export async function* getReports(
     pagingRequest.pageNumber++;
     totalPages = reportsResponse.data.totalPages;
   } while (pagingRequest.pageNumber <= totalPages);
+}
+
+export async function* queryRecords(
+  client: OnspringClient,
+  appId: number,
+  fieldIds: number[],
+  filter: string,
+  pageNumber: number,
+  numberOfPages: number,
+) {
+  const recordsPagingRequest = new PagingRequest(pageNumber, 100);
+  let totalRecordPages = 0;
+
+  do {
+    const request = new QueryRecordsRequest(
+      appId,
+      filter,
+      fieldIds,
+      DataFormat.Formatted,
+      recordsPagingRequest,
+    );
+
+    const recordsResponse = await client.getRecordsByAppId(request);
+
+    if (
+      recordsResponse.isSuccessful === false ||
+      recordsResponse.data === null
+    ) {
+      throw new Error(
+        `Unable to get records for app ${appId} with fields ${fieldIds.join(", ")}: ${recordsResponse.message} (${recordsResponse.statusCode})`,
+      );
+    }
+
+    totalRecordPages = recordsResponse.data.totalPages;
+    yield { records: recordsResponse.data.items, totalPages: totalRecordPages };
+    recordsPagingRequest.pageNumber++;
+  } while (recordsPagingRequest.pageNumber <= numberOfPages);
 }
