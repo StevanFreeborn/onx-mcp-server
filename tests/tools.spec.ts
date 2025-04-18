@@ -1,4 +1,3 @@
-import { mock } from "node:test";
 import {
   checkConnectionTool,
   getAppsTool,
@@ -287,7 +286,7 @@ describe("getFieldsTool", () => {
       content: [
         {
           type: "text",
-          text: "App App 1 not found",
+          text: "Unable to get fields: App App 1 not found",
         },
       ],
     });
@@ -501,11 +500,11 @@ describe("getRecordsTool", () => {
   });
 
   test("it should require an onspring client", () => {
-    expect(() => getRecordsTool(null as any, "appName", [])).toThrowError();
+    expect(() => getRecordsTool(null as any, "appName", [], 1, 1)).toThrowError();
   });
 
   test("it should return a function", () => {
-    const tool = getRecordsTool(mockClient, "appName", []);
+    const tool = getRecordsTool(mockClient, "appName", [], 1, 1);
 
     expect(typeof tool).toBe("function");
   });

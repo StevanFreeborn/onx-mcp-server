@@ -12,24 +12,23 @@ const ruleSchema = z.object({
 type AndGroup = {
   type: "and";
   rules: Filter[];
-}
+};
 
 type OrGroup = {
   type: "or";
   rules: Filter[];
-}
+};
 
 type NotGroup = {
   type: "not";
-  rules: Filter[];
-}
+  rule: Filter;
+};
 
 // age greater_than 18 AND role equals "admin"
 const andGroupSchema: z.ZodType<AndGroup> = z.object({
   type: z.literal("and"),
   rules: z.array(z.lazy(() => filterSchema)),
 });
-
 
 // age greater_than 18 OR role equals "admin"
 const orGroupSchema: z.ZodType<OrGroup> = z.object({
@@ -40,10 +39,15 @@ const orGroupSchema: z.ZodType<OrGroup> = z.object({
 // NOT (role equals "admin")
 const notGroupSchema: z.ZodType<NotGroup> = z.object({
   type: z.literal("not"),
-  rules: z.array(z.lazy(() => filterSchema)),
+  rule: z.lazy(() => filterSchema),
 });
 
-export const filterSchema = z.union([ruleSchema, andGroupSchema, orGroupSchema, notGroupSchema]);
+export const filterSchema = z.union([
+  ruleSchema,
+  andGroupSchema,
+  orGroupSchema,
+  notGroupSchema,
+]);
 
 export type Filter = z.infer<typeof filterSchema>;
 
@@ -68,14 +72,12 @@ const filter: Filter = {
         },
         {
           type: "not",
-          rules: [
-            {
-              type: "rule",
-              fieldName: "role",
-              operator: FilterOperators.Equal,
-              value: "admin",
-            },
-          ],
+          rule: {
+            type: "rule",
+            fieldName: "role",
+            operator: FilterOperators.Equal,
+            value: "admin",
+          },
         },
       ],
     },
@@ -83,5 +85,41 @@ const filter: Filter = {
 };
 
 export function convertFilterToString(filter: Filter) {
-  return 'filter';
+  // what to push in?
+  type StackItem = string | Filter;
+
+  const stack: StackItem[] = [filter];
+  const output: string[] = [];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+
+    if (current === undefined) {
+      break;
+    }
+
+    if (typeof current === "string") {
+      output.push(current);
+      continue;
+    }
+
+    switch (current.type) {
+      case "rule":
+        output.push(
+          `${current.fieldName} ${current.operator} '${current.value}'`,
+        );
+        break;
+      case "not":
+        stack.push(current.rule);
+        stack.push("NOT ");
+        break;
+      case "and":
+      case "or":
+        throw new Error("Not implemented");
+      default:
+        throw new Error("Unknown filter type");
+    }
+  }
+
+  return output.join("");
 }
