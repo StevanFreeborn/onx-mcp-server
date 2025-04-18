@@ -85,7 +85,6 @@ const filter: Filter = {
 };
 
 export function convertFilterToString(filter: Filter) {
-  // what to push in?
   type StackItem = string | Filter;
 
   const stack: StackItem[] = [filter];
