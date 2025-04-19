@@ -3,32 +3,139 @@ import { convertFilterToString, Filter } from "../src/filter";
 import { FilterOperators } from "onspring-api-sdk";
 
 describe("convertFilterToString", () => {
-  test("it should convert a filter that consists of a single rule to a string", () => {
-    const filter: Filter = {
-      type: "rule",
-      fieldName: "status",
-      operator: FilterOperators.Equal,
-      value: "active",
-    };
+  for (const testCase of testCases()) {
+    test(`it should convert given filter to expected filter string: ${testCase.name}`, () => {
+      const result = convertFilterToString(testCase.testFilter);
 
-    const result = convertFilterToString(filter);
+      expect(result).toBe(testCase.expectedString);
+    });
+  }
 
-    expect(result).toBe("status eq 'active'");
-  });
+  type TestCase = {
+    name: string;
+    testFilter: Filter;
+    expectedString: string;
+  };
 
-  test("it should convert a filter that is a single not group", () => {
-    const filter: Filter = {
-      type: "not",
-      rule: {
-        type: 'rule',
-        fieldName: "status",
-        operator: FilterOperators.Equal,
-        value: "active",
+  function testCases(): TestCase[] {
+    return [
+      {
+        name: "single rule",
+        testFilter: {
+          type: "rule",
+          fieldName: "status",
+          operator: FilterOperators.Equal,
+          value: "active",
+        },
+        expectedString: "status eq 'active'",
       },
-    };
-
-    const result = convertFilterToString(filter);
-
-    expect(result).toBe("NOT status eq 'active'");
-  });
+      {
+        name: "not group",
+        testFilter: {
+          type: "not",
+          rule: {
+            type: "rule",
+            fieldName: "status",
+            operator: FilterOperators.Equal,
+            value: "active",
+          },
+        },
+        expectedString: "not status eq 'active'",
+      },
+      {
+        name: "and group with one rule",
+        testFilter: {
+          type: "and",
+          rules: [
+            {
+              type: "rule",
+              fieldName: "status",
+              operator: FilterOperators.Equal,
+              value: "active",
+            },
+          ],
+        },
+        expectedString: "status eq 'active'",
+      },
+      {
+        name: "and group with two rules",
+        testFilter: {
+          type: "and",
+          rules: [
+            {
+              type: "rule",
+              fieldName: "status",
+              operator: FilterOperators.Equal,
+              value: "active",
+            },
+            {
+              type: "not",
+              rule: {
+                type: "rule",
+                fieldName: "status",
+                operator: FilterOperators.Equal,
+                value: "active",
+              },
+            },
+          ],
+        },
+        expectedString: "status eq 'active' and not status eq 'active'",
+      },
+      {
+        name: "and group with three rules",
+        testFilter: {
+          type: "and",
+          rules: [
+            {
+              type: "rule",
+              fieldName: "status",
+              operator: FilterOperators.Equal,
+              value: "active",
+            },
+            {
+              type: "not",
+              rule: {
+                type: "rule",
+                fieldName: "status",
+                operator: FilterOperators.Equal,
+                value: "active",
+              },
+            },
+            {
+              type: "rule",
+              fieldName: "created by",
+              operator: FilterOperators.Equal,
+              value: "stevan",
+            },
+          ],
+        },
+        expectedString:
+          "status eq 'active' and not status eq 'active' and created by eq 'stevan'",
+      },
+      {
+        name: "or group with two rules",
+        testFilter: {
+          type: "or",
+          rules: [
+            {
+              type: "rule",
+              fieldName: "age",
+              operator: FilterOperators.GreaterThan,
+              value: "18",
+            },
+            {
+              type: "not",
+              rule: {
+                type: "rule",
+                fieldName: "role",
+                operator: FilterOperators.Equal,
+                value: "admin",
+              },
+            },
+          ],
+        },
+        expectedString: "age gt '18' or not role eq 'admin'",
+      },
+    ];
+  }
 });

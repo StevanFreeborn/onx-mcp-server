@@ -51,39 +51,6 @@ export const filterSchema = z.union([
 
 export type Filter = z.infer<typeof filterSchema>;
 
-// (status equals "active" AND (age greater_than 18 OR NOT (role equals "admin")))
-const filter: Filter = {
-  type: "and",
-  rules: [
-    {
-      type: "rule",
-      fieldName: "status",
-      operator: FilterOperators.Equal,
-      value: "active",
-    },
-    {
-      type: "or",
-      rules: [
-        {
-          type: "rule",
-          fieldName: "age",
-          operator: FilterOperators.GreaterThan,
-          value: "18",
-        },
-        {
-          type: "not",
-          rule: {
-            type: "rule",
-            fieldName: "role",
-            operator: FilterOperators.Equal,
-            value: "admin",
-          },
-        },
-      ],
-    },
-  ],
-};
-
 export function convertFilterToString(filter: Filter) {
   type StackItem = string | Filter;
 
@@ -101,7 +68,15 @@ export function convertFilterToString(filter: Filter) {
       output.push(current);
       continue;
     }
-
+    
+    // TODO: Need to format the rules
+    // based on the field type that
+    // is being queried against
+    // TODO: We need to replace the field
+    // name with field id
+    // TODO: We need to replace any list
+    // value names with their guid
+    // equivalents
     switch (current.type) {
       case "rule":
         output.push(
@@ -110,11 +85,19 @@ export function convertFilterToString(filter: Filter) {
         break;
       case "not":
         stack.push(current.rule);
-        stack.push("NOT ");
+        stack.push(`${current.type} `);
         break;
       case "and":
       case "or":
-        throw new Error("Not implemented");
+        const rules = [...current.rules].reverse();
+        for (const [index, rule] of rules.entries()) {
+          if (index !== 0) {
+            stack.push(` ${current.type} `);
+          }
+
+          stack.push(rule);
+        }
+        break;
       default:
         throw new Error("Unknown filter type");
     }

@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { checkConnectionTool, getAppsTool, getFieldsTool, getRecordsTool, getReportDataTool, getReportsTool, queryRecordsTool } from "./tools.js";
 import { createOnspringClient } from "./utils.js";
 import { z } from "zod";
-import { FilterOperators, ReportDataType } from "onspring-api-sdk";
+import { ReportDataType } from "onspring-api-sdk";
 import { filterSchema } from "./filter.js";
 
 const server = new McpServer({
