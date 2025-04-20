@@ -1,7 +1,6 @@
 import { FilterOperators } from "onspring-api-sdk";
 import { z } from "zod";
 
-// status equals "active"
 const ruleSchema = z.object({
   type: z.literal("rule"),
   fieldName: z.string(),
@@ -24,19 +23,16 @@ type NotGroup = {
   rule: Filter;
 };
 
-// age greater_than 18 AND role equals "admin"
 const andGroupSchema: z.ZodType<AndGroup> = z.object({
   type: z.literal("and"),
   rules: z.array(z.lazy(() => filterSchema)),
 });
 
-// age greater_than 18 OR role equals "admin"
 const orGroupSchema: z.ZodType<OrGroup> = z.object({
   type: z.literal("or"),
   rules: z.array(z.lazy(() => filterSchema)),
 });
 
-// NOT (role equals "admin")
 const notGroupSchema: z.ZodType<NotGroup> = z.object({
   type: z.literal("not"),
   rule: z.lazy(() => filterSchema),
@@ -68,7 +64,7 @@ export function convertFilterToString(filter: Filter) {
       output.push(current);
       continue;
     }
-    
+
     // TODO: Need to format the rules
     // based on the field type that
     // is being queried against
@@ -89,7 +85,10 @@ export function convertFilterToString(filter: Filter) {
         break;
       case "and":
       case "or":
+        stack.push(')');
+
         const rules = [...current.rules].reverse();
+
         for (const [index, rule] of rules.entries()) {
           if (index !== 0) {
             stack.push(` ${current.type} `);
@@ -97,6 +96,8 @@ export function convertFilterToString(filter: Filter) {
 
           stack.push(rule);
         }
+
+        stack.push('(');
         break;
       default:
         throw new Error("Unknown filter type");

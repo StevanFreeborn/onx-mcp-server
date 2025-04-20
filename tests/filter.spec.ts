@@ -55,7 +55,7 @@ describe("convertFilterToString", () => {
             },
           ],
         },
-        expectedString: "status eq 'active'",
+        expectedString: "(status eq 'active')",
       },
       {
         name: "and group with two rules",
@@ -79,7 +79,7 @@ describe("convertFilterToString", () => {
             },
           ],
         },
-        expectedString: "status eq 'active' and not status eq 'active'",
+        expectedString: "(status eq 'active' and not status eq 'active')",
       },
       {
         name: "and group with three rules",
@@ -110,7 +110,7 @@ describe("convertFilterToString", () => {
           ],
         },
         expectedString:
-          "status eq 'active' and not status eq 'active' and created by eq 'stevan'",
+          "(status eq 'active' and not status eq 'active' and created by eq 'stevan')",
       },
       {
         name: "or group with two rules",
@@ -134,7 +134,7 @@ describe("convertFilterToString", () => {
             },
           ],
         },
-        expectedString: "age gt '18' or not role eq 'admin'",
+        expectedString: "(age gt '18' or not role eq 'admin')",
       },
     ];
   }
