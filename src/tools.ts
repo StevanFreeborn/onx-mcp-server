@@ -1,6 +1,7 @@
 import { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   DataFormat,
+  Field,
   FormulaField,
   ListField,
   OnspringClient,
@@ -8,7 +9,7 @@ import {
   ReportDataType,
 } from "onspring-api-sdk";
 import { getApps, getFields, getRecords, getReports, queryRecords } from "./utils.js";
-import { convertFilterToString, Filter } from "./filter.js";
+import { convertFilterToString, Filter, getFieldNamesFromFilter } from "./filter.js";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
@@ -353,7 +354,9 @@ export function queryRecordsTool(
   return async () => {
     try {
       const appId = await getAppId(client, appName);
-      const requestedFields = await getFieldsByName(client, appId, fields);
+      const filterFields = getFieldNamesFromFilter(filter);
+      const fieldsToLookUp = [...fields, ...Array.from(filterFields)];
+      const requestedFields = await getFieldsByName(client, appId, fieldsToLookUp);
       const requestedFieldIds = parseKeysToInts(requestedFields);
 
       const response: GetRecordsResponse = {
@@ -362,7 +365,7 @@ export function queryRecordsTool(
         totalPages: 0,
       };
 
-      const filterString = convertFilterToString(filter);
+      const filterString = convertFilterToString(filter, requestedFields);
 
       const pages = queryRecords(
         client,
@@ -426,11 +429,11 @@ async function getFieldsByName(
   fields: string[],
 ) {
   const normalizedFields = fields.map((field) => field.toLowerCase());
-  const foundFields: { [index: number]: string } = {};
+  const foundFields: { [index: number]: Field } = {};
 
   for await (const field of getFields(client, appId)) {
     if (normalizedFields.includes(field.name.toLowerCase())) {
-      foundFields[field.id] = field.name;
+      foundFields[field.id] = field;
     }
   }
 
@@ -454,7 +457,7 @@ async function getReportId(
 
 function buildOnxRecord(
   record: Record,
-  requestedFields: { [index: number]: string },
+  requestedFields: { [index: number]: Field },
 ) {
   if (record.recordId === null) {
     throw new Error("Record ID is null");
@@ -466,13 +469,13 @@ function buildOnxRecord(
   };
 
   for (const fieldValue of record.fieldData) {
-    const fieldName = requestedFields[fieldValue.fieldId];
-    onxRecord.data[fieldName] = fieldValue.value;
+    const field = requestedFields[fieldValue.fieldId];
+    onxRecord.data[field.name] = fieldValue.value;
   }
 
   return onxRecord;
 }
 
-function parseKeysToInts(fields: { [index: number]: string }) {
+function parseKeysToInts(fields: { [index: number]: Field }) {
   return Object.keys(fields).map((key) => parseInt(key, 10));
 }
