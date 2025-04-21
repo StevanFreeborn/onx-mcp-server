@@ -1,4 +1,4 @@
-import { FilterOperators } from "onspring-api-sdk";
+import { Field, FilterOperators } from "onspring-api-sdk";
 import { z } from "zod";
 
 const ruleSchema = z.object({
@@ -7,6 +7,8 @@ const ruleSchema = z.object({
   operator: z.nativeEnum(FilterOperators),
   value: z.string().nullable(),
 });
+
+type Rule = z.infer<typeof ruleSchema>;
 
 type AndGroup = {
   type: "and";
@@ -47,7 +49,10 @@ export const filterSchema = z.union([
 
 export type Filter = z.infer<typeof filterSchema>;
 
-export function convertFilterToString(filter: Filter) {
+export function convertFilterToString(
+  filter: Filter,
+  fields: { [index: number]: Field },
+) {
   type StackItem = string | Filter;
 
   const stack: StackItem[] = [filter];
@@ -70,14 +75,9 @@ export function convertFilterToString(filter: Filter) {
     // is being queried against
     // TODO: We need to replace the field
     // name with field id
-    // TODO: We need to replace any list
-    // value names with their guid
-    // equivalents
     switch (current.type) {
       case "rule":
-        output.push(
-          `${current.fieldName} ${current.operator} '${current.value}'`,
-        );
+        output.push(formatRule(current, fields));
         break;
       case "not":
         stack.push(current.rule);
@@ -85,7 +85,7 @@ export function convertFilterToString(filter: Filter) {
         break;
       case "and":
       case "or":
-        stack.push(')');
+        stack.push(")");
 
         const rules = [...current.rules].reverse();
 
@@ -97,7 +97,7 @@ export function convertFilterToString(filter: Filter) {
           stack.push(rule);
         }
 
-        stack.push('(');
+        stack.push("(");
         break;
       default:
         throw new Error("Unknown filter type");
@@ -105,4 +105,49 @@ export function convertFilterToString(filter: Filter) {
   }
 
   return output.join("");
+}
+
+export function getFieldNamesFromFilter(filter: Filter) {
+  const names: Set<string> = new Set();
+
+  const stack: Filter[] = [filter];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+
+    if (current === undefined) {
+      break;
+    }
+
+    if (current.type === "rule") {
+      names.add(current.fieldName);
+      continue;
+    }
+
+    if (current.type === "not") {
+      stack.push(current.rule);
+      continue;
+    }
+
+    if (current.type === "and" || current.type === "or") {
+      stack.push(...current.rules);
+      continue;
+    }
+  }
+
+  return names;
+}
+
+function formatRule(rule: Rule, fields: { [index: number]: Field }) {
+  let fieldId = 0;
+  
+  // TODO: Any better way then just iterating over the fields?
+  for (const [id, field] of Object.entries(fields)) {
+    if (field.name.toLowerCase() === rule.fieldName.toLowerCase()) {
+      fieldId = parseInt(id, 10);
+      break;
+    }
+  }
+
+  return `${fieldId} ${rule.operator} '${rule.value}'`;
 }
