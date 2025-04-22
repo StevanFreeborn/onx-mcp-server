@@ -1,4 +1,10 @@
-import { Field, FilterOperators } from "onspring-api-sdk";
+import {
+  Field,
+  FieldType,
+  FilterOperators,
+  FormulaField,
+  FormulaOutputType,
+} from "onspring-api-sdk";
 import { z } from "zod";
 
 const ruleSchema = z.object({
@@ -73,8 +79,6 @@ export function convertFilterToString(
     // TODO: Need to format the rules
     // based on the field type that
     // is being queried against
-    // TODO: We need to replace the field
-    // name with field id
     switch (current.type) {
       case "rule":
         output.push(formatRule(current, fields));
@@ -139,15 +143,57 @@ export function getFieldNamesFromFilter(filter: Filter) {
 }
 
 function formatRule(rule: Rule, fields: { [index: number]: Field }) {
-  let fieldId = 0;
-  
-  // TODO: Any better way then just iterating over the fields?
-  for (const [id, field] of Object.entries(fields)) {
+  let targetField: Field | null = null;
+
+  for (const field of Object.values(fields)) {
     if (field.name.toLowerCase() === rule.fieldName.toLowerCase()) {
-      fieldId = parseInt(id, 10);
+      targetField = field;
       break;
     }
   }
 
-  return `${fieldId} ${rule.operator} '${rule.value}'`;
+  if (targetField === null) {
+    throw new Error(`Field with name ${rule.fieldName} not found`);
+  }
+
+  if (rule.value === null) {
+    return `${targetField.id} ${rule.operator}`;
+  }
+
+  switch (targetField.type) {
+    case FieldType.Date:
+      return formatDateRule(rule, targetField);
+    case FieldType.Number:
+    case FieldType.AutoNumber:
+      return formatNumberRule(rule, targetField);
+    case FieldType.Formula:
+      return formatFormulaFieldRule(rule, targetField);
+    default:
+      return formatTextRule(rule, targetField);
+  }
+}
+
+function formatFormulaFieldRule(rule: Rule, targetField: Field): string {
+  const formulaField = targetField as FormulaField;
+
+  switch (formulaField.outputType) {
+    case FormulaOutputType.DateAndTime:
+      return formatDateRule(rule, targetField);
+    case FormulaOutputType.Numeric:
+      return formatNumberRule(rule, targetField);
+    default:
+      return formatTextRule(rule, targetField);
+  }
+}
+
+function formatDateRule(rule: Rule, targetField: Field): string {
+  return `${targetField.id} ${rule.operator} datetime'${rule.value}'`;
+}
+
+function formatNumberRule(rule: Rule, targetField: Field): string {
+  return `${targetField.id} ${rule.operator} ${rule.value}`;
+}
+
+function formatTextRule(rule: Rule, targetField: Field): string {
+  return `${targetField.id} ${rule.operator} '${rule.value}'`;
 }
