@@ -479,3 +479,4 @@ function buildOnxRecord(
 function parseKeysToInts(fields: { [index: number]: Field }) {
   return Object.keys(fields).map((key) => parseInt(key, 10));
 }
+

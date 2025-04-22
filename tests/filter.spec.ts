@@ -192,7 +192,7 @@ describe("convertFilterToString", () => {
           ],
         },
         expectedString:
-          "(1 eq 'active' and not 1 eq 'active' and 3 eq 'stevan')",
+          "(1 eq 'active' and not 1 eq 'active' and 3 eq stevan)",
       },
       {
         name: "or group with two rules",
@@ -217,7 +217,7 @@ describe("convertFilterToString", () => {
             },
           ],
         },
-        expectedString: "(2 gt '18' or not 4 eq 'admin')",
+        expectedString: "(2 gt 18 or not 4 eq 'admin')",
       },
     ];
   }

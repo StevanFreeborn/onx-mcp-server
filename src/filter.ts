@@ -165,6 +165,7 @@ function formatRule(rule: Rule, fields: { [index: number]: Field }) {
       return formatDateRule(rule, targetField);
     case FieldType.Number:
     case FieldType.AutoNumber:
+    case FieldType.Reference:
       return formatNumberRule(rule, targetField);
     case FieldType.Formula:
       return formatFormulaFieldRule(rule, targetField);
