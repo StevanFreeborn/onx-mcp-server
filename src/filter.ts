@@ -7,7 +7,7 @@ import {
 } from "onspring-api-sdk";
 import { z } from "zod";
 
-const ruleSchema = z.object({
+export const ruleSchema = z.object({
   type: z.literal("rule"),
   fieldName: z.string(),
   operator: z.nativeEnum(FilterOperators),

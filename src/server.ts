@@ -3,7 +3,7 @@ import { checkConnectionTool, getAppsTool, getFieldsTool, getRecordsTool, getRep
 import { createOnspringClient } from "./utils.js";
 import { z } from "zod";
 import { ReportDataType } from "onspring-api-sdk";
-import { filterSchema } from "./filter.js";
+import { filterSchema, ruleSchema } from "./filter.js";
 
 const server = new McpServer({
   name: "onx-mcp-server",
@@ -81,7 +81,7 @@ server.tool(
   {
     appName: z.string().min(1, "App name is required"),
     fields: z.array(z.string()).min(1, "At least one field is required"),
-    filter: filterSchema,
+    filter: ruleSchema,
     pageNumber: z.number().optional().default(1),
     numberOfPages: z.number().optional().default(1),
   },
