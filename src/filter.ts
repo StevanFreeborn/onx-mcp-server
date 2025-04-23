@@ -53,6 +53,29 @@ export const filterSchema = z.union([
   notGroupSchema,
 ]);
 
+type Test = Rule | AndGroup | OrGroup | NotGroup;
+
+export const test: z.ZodType<Test> = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("rule"),
+    fieldName: z.string(),
+    operator: z.nativeEnum(FilterOperators),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal("and"),
+    rules: z.array(z.lazy(() => test)),
+  }),
+  z.object({
+    type: z.literal("or"),
+    rules: z.array(z.lazy(() => test)),
+  }),
+  z.object({
+    type: z.literal("not"),
+    rule: z.lazy(() => test),
+  }),
+]);
+
 export type Filter = z.infer<typeof filterSchema>;
 
 export function convertFilterToString(
@@ -76,9 +99,6 @@ export function convertFilterToString(
       continue;
     }
 
-    // TODO: Need to format the rules
-    // based on the field type that
-    // is being queried against
     switch (current.type) {
       case "rule":
         output.push(formatRule(current, fields));
