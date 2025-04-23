@@ -509,9 +509,64 @@ describe("getRecordsTool", () => {
     expect(typeof tool).toBe("function");
   });
   
-  test('it should return an error message when app is not found', async () => {});
+  test('it should return an error message when app is not found', async () => {
+    const tool = getRecordsTool(mockClient, "appName", [], 1, 1);
 
-  test('it should return an error message when one or more fields are not found', async () => {});
+    mockClient.getApps = vi.fn().mockResolvedValue({
+      isSuccessful: true,
+      statusCode: 200,
+      data: {
+        items: [],
+        totalPages: 1,
+      },
+    });
+
+    const result = await tool(handlerExtras);
+
+    expect(result).toEqual({
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: "Unable to get records: App appName not found",
+        },
+      ],
+    });
+  });
+
+  test('it should return an error message when one or more fields are not found', async () => {
+    const tool = getRecordsTool(mockClient, "users", ["status"], 1, 1);
+
+    mockClient.getApps = vi.fn().mockResolvedValue({
+      isSuccessful: true,
+      statusCode: 200,
+      data: {
+        items: [{ id: 1, name: "users" }],
+        totalPages: 1,
+      },
+    });
+
+    mockClient.getFieldsByAppId = vi.fn().mockResolvedValue({
+      isSuccessful: true,
+      statusCode: 200,
+      data: {
+        items: [],
+        totalPages: 1,
+      },
+    });
+
+    const result = await tool(handlerExtras);
+
+    expect(result).toEqual({
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: "Unable to get records: Fields status not found",
+        },
+      ],
+    });
+  });
 
   test('it should return an error message when fails to get records', async () => {});
 

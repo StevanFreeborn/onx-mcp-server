@@ -428,14 +428,21 @@ async function getFieldsByName(
   appId: number,
   fields: string[],
 ) {
-  const normalizedFields = fields.map((field) => field.toLowerCase());
+  const fieldsToFind = fields.map((field) => field.toLowerCase());
   const foundFields: { [index: number]: Field } = {};
 
   for await (const field of getFields(client, appId)) {
-    if (normalizedFields.includes(field.name.toLowerCase())) {
-      foundFields[field.id] = field;
+    for (const [index, fieldName] of fieldsToFind.entries()) {
+      if (field.name.toLowerCase() === fieldName) {
+        foundFields[field.id] = field;
+        fieldsToFind.splice(index, 1);
+        break;
+      }
     }
   }
+
+  // TODO: Need to check if fields to find is not
+  // empty and if so throw an error
 
   return foundFields;
 }
