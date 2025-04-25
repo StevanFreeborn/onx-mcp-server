@@ -1,4 +1,5 @@
 import { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
+
 import {
   DataFormat,
   Field,
@@ -8,8 +9,20 @@ import {
   Record,
   ReportDataType,
 } from "onspring-api-sdk";
-import { getApps, getFields, getRecords, getReports, queryRecords } from "./utils.js";
-import { convertFilterToString, Filter, getFieldNamesFromFilter } from "./filter.js";
+
+import {
+  getApps,
+  getFields,
+  getRecords,
+  getReports,
+  queryRecords,
+} from "./utils.js";
+
+import {
+  convertFilterToString,
+  Filter,
+  getFieldNamesFromFilter,
+} from "./filter.js";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
@@ -170,8 +183,6 @@ export function getRecordsTool(
   return async () => {
     try {
       const appId = await getAppId(client, appName);
-      // TODO: Do I care if fields are not found? IDK
-      // TODO: Do I care if no fields are found? IDK
       const requestedFields = await getFieldsByName(client, appId, fields);
       const requestedFieldIds = parseKeysToInts(requestedFields);
       const response: GetRecordsResponse = {
@@ -356,7 +367,11 @@ export function queryRecordsTool(
       const appId = await getAppId(client, appName);
       const filterFields = getFieldNamesFromFilter(filter);
       const fieldsToLookUp = [...fields, ...Array.from(filterFields)];
-      const requestedFields = await getFieldsByName(client, appId, fieldsToLookUp);
+      const requestedFields = await getFieldsByName(
+        client,
+        appId,
+        fieldsToLookUp,
+      );
       const requestedFieldIds = parseKeysToInts(requestedFields);
 
       const response: GetRecordsResponse = {
@@ -441,8 +456,13 @@ async function getFieldsByName(
     }
   }
 
-  // TODO: Need to check if fields to find is not
-  // empty and if so throw an error
+  if (fieldsToFind.length > 0) {
+    throw new Error(`Fields ${fieldsToFind.join(", ")} not found`);
+  }
+
+  if (Object.keys(foundFields).length === 0) {
+    throw new Error("No fields found");
+  }
 
   return foundFields;
 }
@@ -486,4 +506,3 @@ function buildOnxRecord(
 function parseKeysToInts(fields: { [index: number]: Field }) {
   return Object.keys(fields).map((key) => parseInt(key, 10));
 }
-

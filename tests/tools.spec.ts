@@ -4,6 +4,7 @@ import {
   getFieldsTool,
   getRecordsTool,
 } from "../src/tools.js";
+
 import { describe, expect, test, afterEach, vi, beforeEach } from "vitest";
 
 describe("checkConnectionTool", () => {
@@ -440,7 +441,7 @@ describe("getFieldsTool", () => {
       { id: 2, name: "Field 2", type: "Text" },
       { id: 3, name: "Field 3", type: "Text" },
       { id: 4, name: "Field 4", type: "Text" },
-    ]
+    ];
 
     mockClient.getFieldsByAppId = vi
       .fn()
@@ -449,10 +450,7 @@ describe("getFieldsTool", () => {
         message: "Oh no!",
         statusCode: 200,
         data: {
-          items: [
-            testFields[0],
-            testFields[1],
-          ],
+          items: [testFields[0], testFields[1]],
           totalPages: 2,
         },
       })
@@ -461,10 +459,7 @@ describe("getFieldsTool", () => {
         message: "Oh no!",
         statusCode: 200,
         data: {
-          items: [
-            testFields[2],
-            testFields[3],
-          ],
+          items: [testFields[2], testFields[3]],
           totalPages: 2,
         },
       });
@@ -500,7 +495,9 @@ describe("getRecordsTool", () => {
   });
 
   test("it should require an onspring client", () => {
-    expect(() => getRecordsTool(null as any, "appName", [], 1, 1)).toThrowError();
+    expect(() =>
+      getRecordsTool(null as any, "appName", [], 1, 1),
+    ).toThrowError();
   });
 
   test("it should return a function", () => {
@@ -508,8 +505,8 @@ describe("getRecordsTool", () => {
 
     expect(typeof tool).toBe("function");
   });
-  
-  test('it should return an error message when app is not found', async () => {
+
+  test("it should return an error message when app is not found", async () => {
     const tool = getRecordsTool(mockClient, "appName", [], 1, 1);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
@@ -534,7 +531,7 @@ describe("getRecordsTool", () => {
     });
   });
 
-  test('it should return an error message when one or more fields are not found', async () => {
+  test("it should return an error message when one or more fields are not found", async () => {
     const tool = getRecordsTool(mockClient, "users", ["status"], 1, 1);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
@@ -568,13 +565,13 @@ describe("getRecordsTool", () => {
     });
   });
 
-  test('it should return an error message when fails to get records', async () => {});
+  test("it should return an error message when fails to get records", async () => {});
 
-  test('it should return an error message when there is no data', async () => {});
+  test("it should return an error message when there is no data", async () => {});
 
-  test('it should return an error message if getRecords throws an error', async () => {});
+  test("it should return an error message if getRecords throws an error", async () => {});
 
-  test('it should return a list of records when getRecords is successful and has one page', async () => {});
+  test("it should return a list of records when getRecords is successful and has one page", async () => {});
 
-  test('it should return a list of records when getRecords is successful and has multiple pages', async () => {});
+  test("it should return a list of records when getRecords is successful and has multiple pages", async () => {});
 });

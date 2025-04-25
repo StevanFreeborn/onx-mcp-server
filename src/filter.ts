@@ -5,6 +5,7 @@ import {
   FormulaField,
   FormulaOutputType,
 } from "onspring-api-sdk";
+
 import { z } from "zod";
 
 export const ruleSchema = z.object({
@@ -51,29 +52,6 @@ export const filterSchema = z.union([
   andGroupSchema,
   orGroupSchema,
   notGroupSchema,
-]);
-
-type Test = Rule | AndGroup | OrGroup | NotGroup;
-
-export const test: z.ZodType<Test> = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("rule"),
-    fieldName: z.string(),
-    operator: z.nativeEnum(FilterOperators),
-    value: z.string().nullable(),
-  }),
-  z.object({
-    type: z.literal("and"),
-    rules: z.array(z.lazy(() => test)),
-  }),
-  z.object({
-    type: z.literal("or"),
-    rules: z.array(z.lazy(() => test)),
-  }),
-  z.object({
-    type: z.literal("not"),
-    rule: z.lazy(() => test),
-  }),
 ]);
 
 export type Filter = z.infer<typeof filterSchema>;

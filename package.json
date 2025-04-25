@@ -13,6 +13,7 @@
   "scripts": {
     "start": "node build/index.js",
     "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui --api 9527",
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -w -p tsconfig.build.json",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
+    "@vitest/coverage-istanbul": "^3.1.1",
     "@vitest/ui": "^3.1.1",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"

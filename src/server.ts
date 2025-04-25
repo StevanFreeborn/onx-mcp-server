@@ -1,9 +1,19 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { checkConnectionTool, getAppsTool, getFieldsTool, getRecordsTool, getReportDataTool, getReportsTool, queryRecordsTool } from "./tools.js";
+
+import {
+  checkConnectionTool,
+  getAppsTool,
+  getFieldsTool,
+  getRecordsTool,
+  getReportDataTool,
+  getReportsTool,
+  queryRecordsTool,
+} from "./tools.js";
+
 import { createOnspringClient } from "./utils.js";
 import { z } from "zod";
 import { ReportDataType } from "onspring-api-sdk";
-import { filterSchema, ruleSchema, test } from "./filter.js";
+import { filterSchema } from "./filter.js";
 
 const server = new McpServer({
   name: "onx-mcp-server",
@@ -35,18 +45,24 @@ server.tool(
 );
 
 server.tool(
-  "get-records", 
-  "Retrieves a list of records from an app or survey in the Onspring instance", 
+  "get-records",
+  "Retrieves a list of records from an app or survey in the Onspring instance",
   {
     appName: z.string().min(1, "App name is required"),
     fields: z.array(z.string()).min(1, "At least one field is required"),
     pageNumber: z.number().optional().default(1),
     numberOfPages: z.number().optional().default(1),
-  }, 
+  },
   ({ appName, fields, pageNumber, numberOfPages }, req) => {
-    const tool = getRecordsTool(client, appName, fields, pageNumber, numberOfPages);
+    const tool = getRecordsTool(
+      client,
+      appName,
+      fields,
+      pageNumber,
+      numberOfPages,
+    );
     return tool(req);
-  }
+  },
 );
 
 server.tool(
@@ -67,7 +83,9 @@ server.tool(
   {
     appName: z.string().min(1, "App name is required"),
     reportName: z.string().min(1, "Report name is required"),
-    dataType: z.enum([ReportDataType.ReportData, ReportDataType.ChartData]).default(ReportDataType.ReportData),
+    dataType: z
+      .enum([ReportDataType.ReportData, ReportDataType.ChartData])
+      .default(ReportDataType.ReportData),
   },
   ({ appName, reportName, dataType }, req) => {
     const tool = getReportDataTool(client, appName, reportName, dataType);
@@ -81,14 +99,26 @@ server.tool(
   {
     appName: z.string().min(1, "App name is required"),
     fields: z.array(z.string()).min(1, "At least one field is required"),
-    filter: ruleSchema,
+    // When I try to use the filterSchema here
+    // clients always pass filter as string instead
+    // of object
+    filter: z.object({
+      rules: filterSchema,
+    }),
     pageNumber: z.number().optional().default(1),
     numberOfPages: z.number().optional().default(1),
   },
-  ({ appName, fields, filter,  pageNumber, numberOfPages }, req) => {
-    const tool = queryRecordsTool(client, appName, fields, filter, pageNumber, numberOfPages);
+  ({ appName, fields, filter, pageNumber, numberOfPages }, req) => {
+    const tool = queryRecordsTool(
+      client,
+      appName,
+      fields,
+      filter.rules,
+      pageNumber,
+      numberOfPages,
+    );
     return tool(req);
-  }
+  },
 );
 
 export { server };

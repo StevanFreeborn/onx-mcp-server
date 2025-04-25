@@ -1,4 +1,10 @@
-import { ApiResponse, DataFormat, GetRecordsByAppIdRequest, OnspringClient, PagedResponse, PagingRequest, QueryRecordsRequest } from "onspring-api-sdk";
+import {
+  DataFormat,
+  GetRecordsByAppIdRequest,
+  OnspringClient,
+  PagingRequest,
+  QueryRecordsRequest,
+} from "onspring-api-sdk";
 
 export function createOnspringClient() {
   const baseUrl = process.env.BASE_URL;
@@ -19,40 +25,15 @@ export function createOnspringClient() {
   return new OnspringClient(baseUrl, apiKey);
 }
 
-// TODO: Finish implementing this
-// the callback needs to accept a paging request
-// so that this function can mutate and pass
-// it in on each iteration
-async function* getPage<T>(
-  callback: (request: PagingRequest) => Promise<ApiResponse<PagedResponse<T>>>
-) {
-  const pagingRequest = new PagingRequest(1, 100);
-  let totalPages = 1;
-
-  do {
-    const response = await callback(pagingRequest);
-
-    if (response.isSuccessful === false || response.data === null) {
-      throw new Error(`${response.message} (${response.statusCode})`);
-    }
-
-    yield* response.data.items;
-    pagingRequest.pageNumber++;
-    totalPages = response.data.totalPages;
-  } while (pagingRequest.pageNumber <= totalPages);
-}
-
 export async function* getApps(client: OnspringClient) {
   const pagingRequest = new PagingRequest(1, 100);
   let totalPages = 1;
-  
+
   do {
     const appsResponse = await client.getApps(pagingRequest);
 
     if (appsResponse.isSuccessful === false || appsResponse.data === null) {
-      throw new Error(
-        `${appsResponse.message} (${appsResponse.statusCode})`,
-      );
+      throw new Error(`${appsResponse.message} (${appsResponse.statusCode})`);
     }
 
     yield* appsResponse.data.items;
@@ -81,7 +62,7 @@ export async function* getFields(client: OnspringClient, appId: number) {
 }
 
 export async function* getRecords(
-  client: OnspringClient, 
+  client: OnspringClient,
   appId: number,
   fieldIds: number[],
   pageNumber: number,
@@ -110,24 +91,29 @@ export async function* getRecords(
     }
 
     totalRecordPages = recordsResponse.data.totalPages;
-    // TODO: This feels stupid Stevan...think about
-    // a better way.
-    yield { records: recordsResponse.data.items, totalPages: totalRecordPages };
+    yield {
+      records: recordsResponse.data.items,
+      totalPages: totalRecordPages,
+      totalRecords: recordsResponse.data.totalRecords,
+    };
     recordsPagingRequest.pageNumber++;
   } while (recordsPagingRequest.pageNumber <= numberOfPages);
 }
 
-export async function* getReports(
-  client: OnspringClient,
-  appId: number,
-) {
+export async function* getReports(client: OnspringClient, appId: number) {
   const pagingRequest = new PagingRequest(1, 100);
   let totalPages = 1;
 
   do {
-    const reportsResponse = await client.getReportsByAppId(appId, pagingRequest);
+    const reportsResponse = await client.getReportsByAppId(
+      appId,
+      pagingRequest,
+    );
 
-    if (reportsResponse.isSuccessful === false || reportsResponse.data === null) {
+    if (
+      reportsResponse.isSuccessful === false ||
+      reportsResponse.data === null
+    ) {
       throw new Error(
         `${reportsResponse.message} (${reportsResponse.statusCode})`,
       );
@@ -159,7 +145,7 @@ export async function* queryRecords(
       recordsPagingRequest,
     );
 
-    const recordsResponse = await client.getRecordsByAppId(request);
+    const recordsResponse = await client.queryRecords(request);
 
     if (
       recordsResponse.isSuccessful === false ||
@@ -171,7 +157,11 @@ export async function* queryRecords(
     }
 
     totalRecordPages = recordsResponse.data.totalPages;
-    yield { records: recordsResponse.data.items, totalPages: totalRecordPages };
+    yield {
+      records: recordsResponse.data.items,
+      totalPages: totalRecordPages,
+      totalRecords: recordsResponse.data.totalRecords,
+    };
     recordsPagingRequest.pageNumber++;
   } while (recordsPagingRequest.pageNumber <= numberOfPages);
 }
