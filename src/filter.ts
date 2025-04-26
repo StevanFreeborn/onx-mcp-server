@@ -15,7 +15,7 @@ export const ruleSchema = z.object({
   value: z.string().nullable(),
 });
 
-type Rule = z.infer<typeof ruleSchema>;
+export type Rule = z.infer<typeof ruleSchema>;
 
 type AndGroup = {
   type: "and";
@@ -140,7 +140,7 @@ export function getFieldNamesFromFilter(filter: Filter) {
   return names;
 }
 
-function formatRule(rule: Rule, fields: { [index: number]: Field }) {
+export function formatRule(rule: Rule, fields: { [index: number]: Field }) {
   let targetField: Field | null = null;
 
   for (const field of Object.values(fields)) {
@@ -172,7 +172,7 @@ function formatRule(rule: Rule, fields: { [index: number]: Field }) {
   }
 }
 
-function formatFormulaFieldRule(rule: Rule, targetField: Field): string {
+export function formatFormulaFieldRule(rule: Rule, targetField: Field): string {
   const formulaField = targetField as FormulaField;
 
   switch (formulaField.outputType) {

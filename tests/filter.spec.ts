@@ -1,7 +1,117 @@
 import { describe, expect, test } from "vitest";
-import { convertFilterToString, Filter, getFieldNamesFromFilter } from "../src/filter";
-import { Field, FieldStatus, FieldType, FilterOperators } from "onspring-api-sdk";
 
+import {
+  convertFilterToString,
+  Filter,
+  getFieldNamesFromFilter,
+  Rule,
+  formatFormulaFieldRule,
+} from "../src/filter";
+
+import {
+  Field,
+  FieldStatus,
+  FieldType,
+  FilterOperators,
+} from "onspring-api-sdk";
+
+describe("formatRule", () => {
+  test("it should throw an error if rule field is not found", () => {
+    const rule: Rule = {
+      type: "rule",
+      fieldName: "status",
+      operator: FilterOperators.Equal,
+      value: "active",
+    };
+
+    const fields = {};
+
+    expect(() => convertFilterToString(rule, fields)).toThrow(
+      "Field with name status not found",
+    );
+  });
+
+  test("it should return a string without a value when value is null", () => {
+    const rule: Rule = {
+      type: "rule",
+      fieldName: "status",
+      operator: FilterOperators.Equal,
+      value: null,
+    };
+
+    const fields = {
+      1: new Field(
+        1,
+        1,
+        "Status",
+        FieldType.List,
+        FieldStatus.Enabled,
+        false,
+        false,
+      ),
+    };
+
+    const result = convertFilterToString(rule, fields);
+
+    expect(result).toBe("1 eq");
+  });
+
+  test("it should format date rules correctly", () => {
+    const testDate = new Date().toISOString();
+
+    const rule: Rule = {
+      type: "rule",
+      fieldName: "status",
+      operator: FilterOperators.Equal,
+      value: testDate,
+    };
+
+    const fields = {
+      1: new Field(
+        1,
+        1,
+        "Status",
+        FieldType.Date,
+        FieldStatus.Enabled,
+        false,
+        false,
+      ),
+    };
+
+    const result = convertFilterToString(rule, fields);
+
+    expect(result).toBe(`${fields[1].id} eq datetime'${testDate}'`);
+  });
+
+  test("it should format a formula field rule correctly", () => {
+    const rule: Rule = {
+      type: "rule",
+      fieldName: "status",
+      operator: FilterOperators.Equal,
+      value: "active",
+    };
+
+    const fields = {
+      1: new Field(
+        1,
+        1,
+        "Status",
+        FieldType.Formula,
+        FieldStatus.Enabled,
+        false,
+        false,
+      ),
+    };
+
+    const result = convertFilterToString(rule, fields);
+
+    expect(result).toBe("1 eq 'active'");
+  });
+});
+
+describe("formatFormulaFieldRule", () => {
+
+});
 
 describe("getFieldNamesFromFilter", () => {
   test("it should return an array of all field names in filter", () => {
@@ -38,12 +148,14 @@ describe("getFieldNamesFromFilter", () => {
   });
 });
 
-
 describe("convertFilterToString", () => {
   for (const testCase of testCases()) {
     test(`it should convert given filter to expected filter string: ${testCase.name}`, () => {
-      const result = convertFilterToString(testCase.testFilter, testCase.fields);
-    
+      const result = convertFilterToString(
+        testCase.testFilter,
+        testCase.fields,
+      );
+
       expect(result).toBe(testCase.expectedString);
     });
   }
@@ -191,8 +303,7 @@ describe("convertFilterToString", () => {
             },
           ],
         },
-        expectedString:
-          "(1 eq 'active' and not 1 eq 'active' and 3 eq stevan)",
+        expectedString: "(1 eq 'active' and not 1 eq 'active' and 3 eq stevan)",
       },
       {
         name: "or group with two rules",
