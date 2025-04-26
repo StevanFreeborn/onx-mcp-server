@@ -3,7 +3,9 @@ import { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   DataFormat,
   Field,
+  FieldType,
   FormulaField,
+  GetRecordRequest,
   ListField,
   OnspringClient,
   Record,
@@ -415,6 +417,147 @@ export function queryRecordsTool(
       console.error(error);
 
       let errorMessage = "Unable to get records";
+
+      if (error instanceof Error && error.message) {
+        errorMessage = errorMessage + ": " + error.message;
+      }
+
+      return {
+        isError: true,
+        content: [{ type: "text", text: errorMessage }],
+      };
+    }
+  };
+}
+
+export function getFileTool(
+  client: OnspringClient,
+  appName: string,
+  fieldName: string,
+  recordId: number,
+  fileName: string,
+): ToolCallback {
+  if (!client) {
+    throw new Error("Unable to create getFileTool because client is not set");
+  }
+
+  return async () => {
+    try {
+      const appId = await getAppId(client, appName);
+      const requestedFields = await getFieldsByName(client, appId, [fieldName]);
+      let targetField: Field | null = null;
+
+      for (const field of Object.values(requestedFields)) {
+        if (field.name.toLowerCase() === fieldName.toLowerCase()) {
+          targetField = field;
+          break;
+        }
+      }
+
+      if (targetField === null) {
+        throw new Error(`Field ${fieldName} not found`);
+      }
+
+      if (targetField.type !== FieldType.Attachment) {
+        throw new Error(`Field ${fieldName} is not an attachment field`);
+      }
+      
+      console.error("targetField", targetField);
+
+      const getRecordRequest = new GetRecordRequest(
+        appId,
+        recordId,
+        [targetField.id],
+        DataFormat.Formatted,
+      );
+
+      const recordResponse = await client.getRecordById(getRecordRequest);
+      
+      if (recordResponse.isSuccessful === false || recordResponse.data === null) {
+        throw new Error(`${recordResponse.message} (${recordResponse.statusCode})`);
+      }
+
+      const fieldValue = recordResponse.data.fieldData.find(
+        (field) => field.fieldId === targetField.id,
+      );
+
+      if (fieldValue === undefined) {
+        throw new Error(`Field ${fieldName} not found in record ${recordId}`);
+      }
+
+      let fileId: number | null = null;
+
+      switch (targetField.type) {
+        case FieldType.Attachment:
+          const attachmentFieldValue = fieldValue.asAttachmentArray();
+          console.error("attachmentFieldValue", attachmentFieldValue);
+          for (const file of attachmentFieldValue.values()) {
+            if (file.fileName.toLowerCase() === fileName.toLowerCase()) {
+              fileId = file.fileId;
+              break;
+            }
+          }
+          break;
+        default:
+          throw new Error(`Field ${fieldName} is not an attachment or image field`);
+      }
+
+      if (fileId === null) {
+        throw new Error(`File ${fileName} not found in field ${fieldName}`);
+      }
+
+      const fileResponse = await client.getFileById(
+        recordId,
+        targetField.id,
+        fileId,
+      );
+
+      if (fileResponse.isSuccessful === false || fileResponse.data === null) {
+        throw new Error(`${fileResponse.message} (${fileResponse.statusCode})`);
+      }
+
+      const chunks: Buffer[] = [];
+
+      for await (const chunk of fileResponse.data.stream) {
+        const isBuffer = Buffer.isBuffer(chunk);
+
+        if (isBuffer) {
+          chunks.push(chunk);
+          continue;
+        }
+
+        chunks.push(Buffer.from(chunk));
+      }
+
+      const fileBuffer = Buffer.concat(chunks);
+      
+      // TODO: What mime types are text vs non-text?
+
+      // TODO: Need to check file's content type
+      // if file content type is text then convert
+      // to utf8 string and return as text
+      // otherwise return as base64 encoded string
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `File ${fileName} retrieved successfully`,
+          },
+          {
+            type: "resource",
+            resource: {
+              blob: fileBuffer.toString("base64"),
+              mimeType: fileResponse.data.contentType,
+              uri: '',
+            }
+          },
+        ],
+      };
+    } catch (error) {
+      console.error(error);
+
+      let errorMessage = "Unable to get file";
 
       if (error instanceof Error && error.message) {
         errorMessage = errorMessage + ": " + error.message;

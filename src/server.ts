@@ -4,6 +4,7 @@ import {
   checkConnectionTool,
   getAppsTool,
   getFieldsTool,
+  getFileTool,
   getRecordsTool,
   getReportDataTool,
   getReportsTool,
@@ -121,4 +122,20 @@ server.tool(
   },
 );
 
+server.tool(
+  "get-file",
+  "Retrieves a file from a specific record in the Onspring instance",
+  {
+    appName: z.string().min(1, "App name is required"),
+    fieldName: z.string().min(1, "Field name is required"),
+    recordId: z.number().min(1, "Record ID is required"),
+    fileName: z.string().min(1, "File name is required"),
+  },
+  ({ appName, fieldName, recordId, fileName }, req) => {
+    const tool = getFileTool(client, appName, fieldName, recordId, fileName);
+    return tool(req);
+  }
+);
+
 export { server };
+
