@@ -1,4 +1,13 @@
 import {
+  Field,
+  FieldStatus,
+  FieldType,
+  FormulaField,
+  FormulaOutputType,
+  ListField,
+  Multiplicity,
+} from "onspring-api-sdk";
+import {
   checkConnectionTool,
   getAppsTool,
   getFieldsTool,
@@ -398,8 +407,47 @@ describe("getFieldsTool", () => {
     });
 
     const testFields = [
-      { id: 1, name: "Field 1", type: "Text" },
-      { id: 2, name: "Field 2", type: "Text" },
+      new Field(
+        1,
+        1,
+        "Field 1",
+        FieldType.Text,
+        FieldStatus.Enabled,
+        false,
+        false,
+      ),
+      new Field(
+        2,
+        1,
+        "Field 2",
+        FieldType.Text,
+        FieldStatus.Enabled,
+        false,
+        false,
+      ),
+      new ListField(
+        4,
+        1,
+        "Field 3",
+        FieldType.List,
+        FieldStatus.Enabled,
+        false,
+        false,
+        Multiplicity.SingleSelect,
+        1,
+        [],
+      ),
+      new FormulaField(
+        5,
+        1,
+        "Field 4",
+        FieldType.Formula,
+        FieldStatus.Enabled,
+        false,
+        false,
+        FormulaOutputType.DateAndTime,
+        [],
+      ),
     ];
 
     mockClient.getFieldsByAppId = vi.fn().mockResolvedValue({
@@ -418,7 +466,12 @@ describe("getFieldsTool", () => {
       content: [
         {
           type: "text",
-          text: JSON.stringify(testFields),
+          text: JSON.stringify([
+            { id: 1, name: "Field 1", type: "Text" },
+            { id: 2, name: "Field 2", type: "Text" },
+            { id: 4, name: "Field 3", type: "SingleSelect List" },
+            { id: 5, name: "Field 4", type: "DateAndTime Formula" },
+          ]),
         },
       ],
     });
@@ -565,11 +618,92 @@ describe("getRecordsTool", () => {
     });
   });
 
-  test("it should return an error message when fails to get records", async () => {});
+  test("it should return an error message when fails to get records", async () => {
+    const tool = getRecordsTool(mockClient, "users", ["status"], 1, 1);
 
-  test("it should return an error message when there is no data", async () => {});
+    mockClient.getApps = vi.fn().mockResolvedValue({
+      isSuccessful: true,
+      statusCode: 200,
+      data: {
+        items: [{ id: 1, name: "users" }],
+        totalPages: 1,
+      },
+    });
 
-  test("it should return an error message if getRecords throws an error", async () => {});
+    mockClient.getFieldsByAppId = vi.fn().mockResolvedValue({
+      isSuccessful: true,
+      statusCode: 200,
+      data: {
+        items: [
+          { id: 1, name: "status", type: FieldType.Text },
+          { id: 2, name: "name", type: FieldType.Text },
+        ],
+        totalPages: 1,
+      },
+    });
+
+    mockClient.getRecordsByAppId = vi.fn().mockResolvedValue({
+      isSuccessful: false,
+      message: "Oh no!",
+      statusCode: 500,
+    });
+
+    const result = await tool(handlerExtras);
+
+    expect(result).toEqual({
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: "Unable to get records: Unable to get records for app 1 with fields 1: Oh no! (500)",
+        },
+      ],
+    });
+  });
+
+  test("it should return an error message when there is no data", async () => {
+    const tool = getRecordsTool(mockClient, "users", ["status"], 1, 1);
+
+    mockClient.getApps = vi.fn().mockResolvedValue({
+      isSuccessful: true,
+      statusCode: 200,
+      data: {
+        items: [{ id: 1, name: "users" }],
+        totalPages: 1,
+      },
+    });
+
+    mockClient.getFieldsByAppId = vi.fn().mockResolvedValue({
+      isSuccessful: true,
+      statusCode: 200,
+      data: {
+        items: [
+          { id: 1, name: "status", type: FieldType.Text },
+          { id: 2, name: "name", type: FieldType.Text },
+        ],
+        totalPages: 1,
+      },
+    });
+
+    mockClient.getRecordsByAppId = vi.fn().mockResolvedValue({
+      isSuccessful: true,
+      message: "Oh no!",
+      statusCode: 200,
+      data: null,
+    });
+
+    const result = await tool(handlerExtras);
+
+    expect(result).toEqual({
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: "Unable to get records: Unable to get records for app 1 with fields 1: Oh no! (200)",
+        },
+      ],
+    });
+  });
 
   test("it should return a list of records when getRecords is successful and has one page", async () => {});
 

@@ -13,6 +13,8 @@ import {
   FieldStatus,
   FieldType,
   FilterOperators,
+  FormulaField,
+  FormulaOutputType,
 } from "onspring-api-sdk";
 
 describe("formatRule", () => {
@@ -110,7 +112,55 @@ describe("formatRule", () => {
 });
 
 describe("formatFormulaFieldRule", () => {
+  test('it should format a formula field rule with a numeric output correctly', () => {
+    const rule: Rule = {
+      type: "rule",
+      fieldName: "number",
+      operator: FilterOperators.Equal,
+      value: "123",
+    };
 
+    const field = new FormulaField(
+      1,
+      1,
+      "Number",
+      FieldType.Formula,
+      FieldStatus.Enabled,
+      false,
+      false,
+      FormulaOutputType.Numeric,
+      []
+    );
+
+    const result = formatFormulaFieldRule(rule, field);
+
+    expect(result).toBe("1 eq 123");
+  });
+
+  test('it should format a formula field rule with a date output correctly', () => {
+    const rule: Rule = {
+      type: "rule",
+      fieldName: "date",
+      operator: FilterOperators.Equal,
+      value: new Date().toISOString(),
+    };
+
+    const field = new FormulaField(
+      1,
+      1,
+      "Date",
+      FieldType.Formula,
+      FieldStatus.Enabled,
+      false,
+      false,
+      FormulaOutputType.DateAndTime,
+      []
+    );
+
+    const result = formatFormulaFieldRule(rule, field);
+
+    expect(result).toBe(`1 eq datetime'${rule.value}'`);
+  });
 });
 
 describe("getFieldNamesFromFilter", () => {
