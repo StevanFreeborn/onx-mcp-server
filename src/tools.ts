@@ -25,6 +25,7 @@ import {
   Filter,
   getFieldNamesFromFilter,
 } from "./filter.js";
+import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
@@ -43,18 +44,7 @@ export function checkConnectionTool(client: OnspringClient): ToolCallback {
         ],
       };
     } catch (error) {
-      console.error(error);
-
-      let errorMessage = "Unable to connect to Onspring";
-
-      if (error instanceof Error && error.message) {
-        errorMessage = errorMessage + ": " + error.message;
-      }
-
-      return {
-        isError: true,
-        content: [{ type: "text", text: errorMessage }],
-      };
+      return handleError("Unable to check connection", error);
     }
   };
 }
@@ -76,18 +66,7 @@ export function getAppsTool(client: OnspringClient): ToolCallback {
         content: [{ type: "text", text: JSON.stringify(apps) }],
       };
     } catch (error) {
-      console.error(error);
-
-      let errorMessage = "Unable to get apps";
-
-      if (error instanceof Error && error.message) {
-        errorMessage = errorMessage + ": " + error.message;
-      }
-
-      return {
-        isError: true,
-        content: [{ type: "text", text: errorMessage }],
-      };
+      return handleError("Unable to get apps", error);
     }
   };
 }
@@ -140,18 +119,7 @@ export function getFieldsTool(
         ],
       };
     } catch (error) {
-      console.error(error);
-
-      let errorMessage = "Unable to get fields";
-
-      if (error instanceof Error && error.message) {
-        errorMessage = errorMessage + ": " + error.message;
-      }
-
-      return {
-        isError: true,
-        content: [{ type: "text", text: errorMessage }],
-      };
+      return handleError("Unable to get fields", error);
     }
   };
 }
@@ -167,6 +135,7 @@ type GetRecordsResponse = {
   appId: number;
   records: OnxRecord[];
   totalPages: number;
+  totalRecords: number;
 };
 
 export function getRecordsTool(
@@ -191,6 +160,7 @@ export function getRecordsTool(
         appId: appId,
         records: [],
         totalPages: 0,
+        totalRecords: 0,
       };
 
       const pages = getRecords(
@@ -202,15 +172,12 @@ export function getRecordsTool(
       );
 
       for await (const page of pages) {
-        const onxRecords: OnxRecord[] = [];
-
         for (const record of page.records) {
           const onxRecord = buildOnxRecord(record, requestedFields);
-          onxRecords.push(onxRecord);
+          response.records.push(onxRecord);
           response.totalPages = page.totalPages;
+          response.totalRecords = page.totalRecords;
         }
-
-        response.records.push(...onxRecords);
       }
 
       return {
@@ -222,18 +189,7 @@ export function getRecordsTool(
         ],
       };
     } catch (error) {
-      console.error(error);
-
-      let errorMessage = "Unable to get records";
-
-      if (error instanceof Error && error.message) {
-        errorMessage = errorMessage + ": " + error.message;
-      }
-
-      return {
-        isError: true,
-        content: [{ type: "text", text: errorMessage }],
-      };
+      return handleError("Unable to get records", error);
     }
   };
 }
@@ -266,20 +222,7 @@ export function getReportsTool(
         ],
       };
     } catch (error) {
-      console.error(error);
-
-      console.error(error);
-
-      let errorMessage = "Unable to get reports";
-
-      if (error instanceof Error && error.message) {
-        errorMessage = errorMessage + ": " + error.message;
-      }
-
-      return {
-        isError: true,
-        content: [{ type: "text", text: errorMessage }],
-      };
+      return handleError("Unable to get reports", error);
     }
   };
 }
@@ -334,18 +277,7 @@ export function getReportDataTool(
         ],
       };
     } catch (error) {
-      console.error(error);
-
-      let errorMessage = "Unable to get report data";
-
-      if (error instanceof Error && error.message) {
-        errorMessage = errorMessage + ": " + error.message;
-      }
-
-      return {
-        isError: true,
-        content: [{ type: "text", text: errorMessage }],
-      };
+      return handleError("Unable to get report data", error);
     }
   };
 }
@@ -368,21 +300,26 @@ export function queryRecordsTool(
     try {
       const appId = await getAppId(client, appName);
       const filterFields = getFieldNamesFromFilter(filter);
-      const fieldsToLookUp = [...fields, ...Array.from(filterFields)];
-      const requestedFields = await getFieldsByName(
-        client,
-        appId,
-        fieldsToLookUp,
+      const fieldsToLookUp = Array.from(new Set([...fields, ...filterFields]));
+      const fieldsNeeded = await getFieldsByName(client, appId, fieldsToLookUp);
+
+      const fieldsNeededForFilter = filterFieldsByName(
+        fieldsNeeded,
+        Array.from(filterFields),
       );
-      const requestedFieldIds = parseKeysToInts(requestedFields);
+
+      const fieldsNeededForQuery = filterFieldsByName(fieldsNeeded, fields);
+
+      const requestedFieldIds = parseKeysToInts(fieldsNeededForQuery);
 
       const response: GetRecordsResponse = {
         appId: appId,
         records: [],
         totalPages: 0,
+        totalRecords: 0,
       };
 
-      const filterString = convertFilterToString(filter, requestedFields);
+      const filterString = convertFilterToString(filter, fieldsNeededForFilter);
 
       const pages = queryRecords(
         client,
@@ -394,15 +331,12 @@ export function queryRecordsTool(
       );
 
       for await (const page of pages) {
-        const onxRecords: OnxRecord[] = [];
-
         for (const record of page.records) {
-          const onxRecord = buildOnxRecord(record, requestedFields);
-          onxRecords.push(onxRecord);
+          const onxRecord = buildOnxRecord(record, fieldsNeededForQuery);
+          response.records.push(onxRecord);
           response.totalPages = page.totalPages;
+          response.totalRecords = page.totalRecords;
         }
-
-        response.records.push(...onxRecords);
       }
 
       return {
@@ -414,18 +348,7 @@ export function queryRecordsTool(
         ],
       };
     } catch (error) {
-      console.error(error);
-
-      let errorMessage = "Unable to get records";
-
-      if (error instanceof Error && error.message) {
-        errorMessage = errorMessage + ": " + error.message;
-      }
-
-      return {
-        isError: true,
-        content: [{ type: "text", text: errorMessage }],
-      };
+      return handleError("Unable to get records", error);
     }
   };
 }
@@ -461,7 +384,7 @@ export function getFileTool(
       if (targetField.type !== FieldType.Attachment) {
         throw new Error(`Field ${fieldName} is not an attachment field`);
       }
-      
+
       console.error("targetField", targetField);
 
       const getRecordRequest = new GetRecordRequest(
@@ -472,9 +395,14 @@ export function getFileTool(
       );
 
       const recordResponse = await client.getRecordById(getRecordRequest);
-      
-      if (recordResponse.isSuccessful === false || recordResponse.data === null) {
-        throw new Error(`${recordResponse.message} (${recordResponse.statusCode})`);
+
+      if (
+        recordResponse.isSuccessful === false ||
+        recordResponse.data === null
+      ) {
+        throw new Error(
+          `${recordResponse.message} (${recordResponse.statusCode})`,
+        );
       }
 
       const fieldValue = recordResponse.data.fieldData.find(
@@ -499,7 +427,9 @@ export function getFileTool(
           }
           break;
         default:
-          throw new Error(`Field ${fieldName} is not an attachment or image field`);
+          throw new Error(
+            `Field ${fieldName} is not an attachment or image field`,
+          );
       }
 
       if (fileId === null) {
@@ -530,13 +460,25 @@ export function getFileTool(
       }
 
       const fileBuffer = Buffer.concat(chunks);
-      
-      // TODO: What mime types are text vs non-text?
 
-      // TODO: Need to check file's content type
-      // if file content type is text then convert
-      // to utf8 string and return as text
-      // otherwise return as base64 encoded string
+      if (fileResponse.data.contentType.startsWith("text/")) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `File ${fileName} retrieved successfully`,
+            },
+            {
+              type: "resource",
+              resource: {
+                blob: fileBuffer.toString("utf-8"),
+                mimeType: fileResponse.data.contentType,
+                uri: "",
+              },
+            },
+          ],
+        };
+      }
 
       return {
         content: [
@@ -549,24 +491,13 @@ export function getFileTool(
             resource: {
               blob: fileBuffer.toString("base64"),
               mimeType: fileResponse.data.contentType,
-              uri: '',
-            }
+              uri: "",
+            },
           },
         ],
       };
     } catch (error) {
-      console.error(error);
-
-      let errorMessage = "Unable to get file";
-
-      if (error instanceof Error && error.message) {
-        errorMessage = errorMessage + ": " + error.message;
-      }
-
-      return {
-        isError: true,
-        content: [{ type: "text", text: errorMessage }],
-      };
+      return handleError("Unable to get file", error);
     }
   };
 }
@@ -640,6 +571,11 @@ function buildOnxRecord(
 
   for (const fieldValue of record.fieldData) {
     const field = requestedFields[fieldValue.fieldId];
+
+    if (field === undefined) {
+      continue;
+    }
+
     onxRecord.data[field.name] = fieldValue.value;
   }
 
@@ -648,4 +584,34 @@ function buildOnxRecord(
 
 function parseKeysToInts(fields: { [index: number]: Field }) {
   return Object.keys(fields).map((key) => parseInt(key, 10));
+}
+
+function handleError(msg: string, error: unknown): CallToolResult {
+  console.error(msg, error);
+
+  let errorMessage = msg;
+
+  if (error instanceof Error && error.message) {
+    errorMessage = errorMessage + ": " + error.message;
+  }
+
+  return {
+    isError: true,
+    content: [{ type: "text", text: errorMessage }],
+  };
+}
+
+function filterFieldsByName(
+  fields: { [index: number]: Field },
+  fieldNames: string[],
+) {
+  return Object.entries(fields).reduce(
+    (acc, [key, field]) => {
+      if (fieldNames.includes(field.name)) {
+        acc[parseInt(key, 10)] = field;
+      }
+      return acc;
+    },
+    {} as { [index: number]: Field },
+  );
 }
