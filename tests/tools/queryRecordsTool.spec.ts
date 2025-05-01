@@ -342,7 +342,7 @@ describe("queryRecordsTool", () => {
         value: "value",
       },
       1,
-      1,
+      2,
     );
 
     mockClient.getApps = vi.fn().mockResolvedValue({

@@ -4,19 +4,28 @@ import {
   DataFormat,
   Field,
   FieldType,
+  FileStorageSite,
   FormulaField,
   GetRecordRequest,
   ListField,
   OnspringClient,
-  Record,
   ReportDataType,
 } from "onspring-api-sdk";
 
 import {
+  buildOnxRecord,
+  filterFieldsByName,
+  getAppId,
   getApps,
   getFields,
+  getFieldsByName,
   getRecords,
+  GetRecordsResponse,
+  getReportId,
   getReports,
+  handleError,
+  OnxRecord,
+  parseKeysToInts,
   queryRecords,
 } from "./utils.js";
 
@@ -25,7 +34,6 @@ import {
   Filter,
   getFieldNamesFromFilter,
 } from "./filter.js";
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
@@ -123,20 +131,6 @@ export function getFieldsTool(
     }
   };
 }
-
-type OnxRecord = {
-  recordId: number;
-  data: {
-    [key: string]: string | null;
-  };
-};
-
-type GetRecordsResponse = {
-  appId: number;
-  records: OnxRecord[];
-  totalPages: number;
-  totalRecords: number;
-};
 
 export function getRecordsTool(
   client: OnspringClient,
@@ -385,8 +379,6 @@ export function getFileTool(
         throw new Error(`Field ${fieldName} is not an attachment field`);
       }
 
-      console.error("targetField", targetField);
-
       const getRecordRequest = new GetRecordRequest(
         appId,
         recordId,
@@ -418,9 +410,15 @@ export function getFileTool(
       switch (targetField.type) {
         case FieldType.Attachment:
           const attachmentFieldValue = fieldValue.asAttachmentArray();
-          console.error("attachmentFieldValue", attachmentFieldValue);
+
           for (const file of attachmentFieldValue.values()) {
             if (file.fileName.toLowerCase() === fileName.toLowerCase()) {
+              if (file.storageLocation !== FileStorageSite.Internal) {
+                throw new Error(
+                  `File ${fileName} is not stored in Onspring. It is stored in ${file.storageLocation}`,
+                );
+              }
+
               fileId = file.fileId;
               break;
             }
@@ -500,118 +498,4 @@ export function getFileTool(
       return handleError("Unable to get file", error);
     }
   };
-}
-
-async function getAppId(client: OnspringClient, appName: string) {
-  for await (const app of getApps(client)) {
-    if (app.name.toLowerCase() === appName.toLowerCase()) {
-      return app.id;
-    }
-  }
-
-  throw new Error(`App ${appName} not found`);
-}
-
-async function getFieldsByName(
-  client: OnspringClient,
-  appId: number,
-  fields: string[],
-) {
-  const fieldsToFind = fields.map((field) => field.toLowerCase());
-  const foundFields: { [index: number]: Field } = {};
-
-  for await (const field of getFields(client, appId)) {
-    for (const [index, fieldName] of fieldsToFind.entries()) {
-      if (field.name.toLowerCase() === fieldName) {
-        foundFields[field.id] = field;
-        fieldsToFind.splice(index, 1);
-        break;
-      }
-    }
-  }
-
-  if (fieldsToFind.length > 0) {
-    throw new Error(`Fields ${fieldsToFind.join(", ")} not found`);
-  }
-
-  if (Object.keys(foundFields).length === 0) {
-    throw new Error("No fields found");
-  }
-
-  return foundFields;
-}
-
-async function getReportId(
-  client: OnspringClient,
-  appId: number,
-  reportName: string,
-) {
-  for await (const report of getReports(client, appId)) {
-    console.error("report", report);
-    if (report.name.toLowerCase() === reportName.toLowerCase()) {
-      return report.id;
-    }
-  }
-
-  throw new Error(`Report ${reportName} not found`);
-}
-
-function buildOnxRecord(
-  record: Record,
-  requestedFields: { [index: number]: Field },
-) {
-  if (record.recordId === null) {
-    throw new Error("Record ID is null");
-  }
-
-  const onxRecord: OnxRecord = {
-    recordId: record.recordId,
-    data: {},
-  };
-
-  for (const fieldValue of record.fieldData) {
-    const field = requestedFields[fieldValue.fieldId];
-
-    if (field === undefined) {
-      continue;
-    }
-
-    onxRecord.data[field.name] = fieldValue.value;
-  }
-
-  return onxRecord;
-}
-
-function parseKeysToInts(fields: { [index: number]: Field }) {
-  return Object.keys(fields).map((key) => parseInt(key, 10));
-}
-
-function handleError(msg: string, error: unknown): CallToolResult {
-  console.error(msg, error);
-
-  let errorMessage = msg;
-
-  if (error instanceof Error && error.message) {
-    errorMessage = errorMessage + ": " + error.message;
-  }
-
-  return {
-    isError: true,
-    content: [{ type: "text", text: errorMessage }],
-  };
-}
-
-function filterFieldsByName(
-  fields: { [index: number]: Field },
-  fieldNames: string[],
-) {
-  return Object.entries(fields).reduce(
-    (acc, [key, field]) => {
-      if (fieldNames.includes(field.name)) {
-        acc[parseInt(key, 10)] = field;
-      }
-      return acc;
-    },
-    {} as { [index: number]: Field },
-  );
 }

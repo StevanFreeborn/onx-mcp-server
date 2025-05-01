@@ -204,7 +204,6 @@ describe("getFieldsTool", () => {
 
     mockClient.getFieldsByAppId = vi.fn().mockResolvedValue({
       isSuccessful: true,
-      message: "Oh no!",
       statusCode: 200,
       data: {
         items: testFields,
