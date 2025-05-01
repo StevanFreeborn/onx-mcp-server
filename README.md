@@ -97,6 +97,9 @@ The server requires that the following environment variables are set:
 }
 ```
 
+> [!NOTE]
+> The specific command and arguments may vary based on your setup.
+
 ## Available Tools
 
 The MCP Server exposes the following tools for AI assistants to interact with Onspring:
