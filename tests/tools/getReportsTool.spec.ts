@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { getReportsTool } from "../../src/tools";
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { getReportsTool } from '../../src/tools';
 
-describe("getReportsTool", () => {
+describe('getReportsTool', () => {
   const OnspringClient = vi.fn();
   const mockClient = new OnspringClient();
   const handlerExtras = {
@@ -10,7 +10,7 @@ describe("getReportsTool", () => {
   };
 
   beforeEach(() => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -18,18 +18,18 @@ describe("getReportsTool", () => {
     vi.restoreAllMocks();
   });
 
-  test("it should require an onspring client", () => {
-    expect(() => getReportsTool(null as any, "appName")).toThrowError();
+  test('it should require an onspring client', () => {
+    expect(() => getReportsTool(null!, 'appName')).toThrowError();
   });
 
-  test("it should return a function", () => {
-    const tool = getReportsTool(mockClient, "appName");
+  test('it should return a function', () => {
+    const tool = getReportsTool(mockClient, 'appName');
 
-    expect(typeof tool).toBe("function");
+    expect(typeof tool).toBe('function');
   });
 
-  test("it should return an error message when app is not found", async () => {
-    const tool = getReportsTool(mockClient, "appName");
+  test('it should return an error message when app is not found', async () => {
+    const tool = getReportsTool(mockClient, 'appName');
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
@@ -46,28 +46,28 @@ describe("getReportsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get reports: App appName not found",
+          type: 'text',
+          text: 'Unable to get reports: App appName not found',
         },
       ],
     });
   });
 
-  test("it should return an error message when fails to get reports", async () => {
-    const tool = getReportsTool(mockClient, "appName");
+  test('it should return an error message when fails to get reports', async () => {
+    const tool = getReportsTool(mockClient, 'appName');
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "appName" }],
+        items: [{ id: 1, name: 'appName' }],
         totalPages: 1,
       },
     });
 
     mockClient.getReportsByAppId = vi.fn().mockResolvedValue({
       isSuccessful: false,
-      message: "Oh no!",
+      message: 'Oh no!',
       statusCode: 500,
     });
 
@@ -77,28 +77,28 @@ describe("getReportsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get reports: Oh no! (500)",
+          type: 'text',
+          text: 'Unable to get reports: Oh no! (500)',
         },
       ],
     });
   });
 
-  test("it should return an error message when there is no data", async () => {
-    const tool = getReportsTool(mockClient, "appName");
+  test('it should return an error message when there is no data', async () => {
+    const tool = getReportsTool(mockClient, 'appName');
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "appName" }],
+        items: [{ id: 1, name: 'appName' }],
         totalPages: 1,
       },
     });
 
     mockClient.getReportsByAppId = vi.fn().mockResolvedValue({
       isSuccessful: true,
-      message: "Oh no!",
+      message: 'Oh no!',
       statusCode: 200,
       data: null,
     });
@@ -109,28 +109,28 @@ describe("getReportsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get reports: Oh no! (200)",
+          type: 'text',
+          text: 'Unable to get reports: Oh no! (200)',
         },
       ],
     });
   });
 
-  test("it should return a list of reports when getReports is successful and has one page", async () => {
-    const tool = getReportsTool(mockClient, "appName");
+  test('it should return a list of reports when getReports is successful and has one page', async () => {
+    const tool = getReportsTool(mockClient, 'appName');
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "appName" }],
+        items: [{ id: 1, name: 'appName' }],
         totalPages: 1,
       },
     });
 
     const testReports = [
-      { id: 1, name: "Report 1" },
-      { id: 2, name: "Report 2" },
+      { id: 1, name: 'Report 1' },
+      { id: 2, name: 'Report 2' },
     ];
 
     mockClient.getReportsByAppId = vi.fn().mockResolvedValue({
@@ -147,30 +147,30 @@ describe("getReportsTool", () => {
     expect(result).toEqual({
       content: [
         {
-          type: "text",
-          text: JSON.stringify(testReports.map((report) => report.name)),
+          type: 'text',
+          text: JSON.stringify(testReports.map(report => report.name)),
         },
       ],
     });
   });
 
-  test("it should return a list of reports when getReports is successful and has multiple pages", async () => {
-    const tool = getReportsTool(mockClient, "appName");
+  test('it should return a list of reports when getReports is successful and has multiple pages', async () => {
+    const tool = getReportsTool(mockClient, 'appName');
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "appName" }],
+        items: [{ id: 1, name: 'appName' }],
         totalPages: 1,
       },
     });
 
     const testReports = [
-      { id: 1, name: "Report 1" },
-      { id: 2, name: "Report 2" },
-      { id: 3, name: "Report 3" },
-      { id: 4, name: "Report 4" },
+      { id: 1, name: 'Report 1' },
+      { id: 2, name: 'Report 2' },
+      { id: 3, name: 'Report 3' },
+      { id: 4, name: 'Report 4' },
     ];
 
     mockClient.getReportsByAppId = vi
@@ -197,11 +197,10 @@ describe("getReportsTool", () => {
     expect(result).toEqual({
       content: [
         {
-          type: "text",
-          text: JSON.stringify(testReports.map((report) => report.name)),
+          type: 'text',
+          text: JSON.stringify(testReports.map(report => report.name)),
         },
       ],
     });
   });
 });
-

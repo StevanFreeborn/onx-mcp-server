@@ -1,4 +1,4 @@
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 import {
   DataFormat,
@@ -8,7 +8,7 @@ import {
   PagingRequest,
   QueryRecordsRequest,
   Record,
-} from "onspring-api-sdk";
+} from 'onspring-api-sdk';
 
 export type OnxRecord = {
   recordId: number;
@@ -29,15 +29,11 @@ export function createOnspringClient() {
   const apiKey = process.env.ONSPRING_API_KEY;
 
   if (!baseUrl) {
-    throw new Error(
-      "Unable to create Onspring client because ONSPRING_BASE_URL is not set",
-    );
+    throw new Error('Unable to create Onspring client because ONSPRING_BASE_URL is not set');
   }
 
   if (!apiKey) {
-    throw new Error(
-      "Unable to create Onspring client because ONSPRING_API_KEY is not set",
-    );
+    throw new Error('Unable to create Onspring client because ONSPRING_API_KEY is not set');
   }
 
   return new OnspringClient(baseUrl, apiKey);
@@ -68,9 +64,7 @@ export async function* getFields(client: OnspringClient, appId: number) {
     const fieldsResponse = await client.getFieldsByAppId(appId, pagingRequest);
 
     if (fieldsResponse.isSuccessful === false || fieldsResponse.data === null) {
-      throw new Error(
-        `${fieldsResponse.message} (${fieldsResponse.statusCode})`,
-      );
+      throw new Error(`${fieldsResponse.message} (${fieldsResponse.statusCode})`);
     }
 
     yield* fieldsResponse.data.items;
@@ -99,12 +93,9 @@ export async function* getRecords(
 
     const recordsResponse = await client.getRecordsByAppId(request);
 
-    if (
-      recordsResponse.isSuccessful === false ||
-      recordsResponse.data === null
-    ) {
+    if (recordsResponse.isSuccessful === false || recordsResponse.data === null) {
       throw new Error(
-        `Unable to get records for app ${appId} with fields ${fieldIds.join(", ")}: ${recordsResponse.message} (${recordsResponse.statusCode})`,
+        `Unable to get records for app ${appId} with fields ${fieldIds.join(', ')}: ${recordsResponse.message} (${recordsResponse.statusCode})`,
       );
     }
 
@@ -123,18 +114,10 @@ export async function* getReports(client: OnspringClient, appId: number) {
   let totalPages = 1;
 
   do {
-    const reportsResponse = await client.getReportsByAppId(
-      appId,
-      pagingRequest,
-    );
+    const reportsResponse = await client.getReportsByAppId(appId, pagingRequest);
 
-    if (
-      reportsResponse.isSuccessful === false ||
-      reportsResponse.data === null
-    ) {
-      throw new Error(
-        `${reportsResponse.message} (${reportsResponse.statusCode})`,
-      );
+    if (reportsResponse.isSuccessful === false || reportsResponse.data === null) {
+      throw new Error(`${reportsResponse.message} (${reportsResponse.statusCode})`);
     }
 
     yield* reportsResponse.data.items;
@@ -165,12 +148,9 @@ export async function* queryRecords(
 
     const recordsResponse = await client.queryRecords(request);
 
-    if (
-      recordsResponse.isSuccessful === false ||
-      recordsResponse.data === null
-    ) {
+    if (recordsResponse.isSuccessful === false || recordsResponse.data === null) {
       throw new Error(
-        `Unable to get records for app ${appId} with fields ${fieldIds.join(", ")}: ${recordsResponse.message} (${recordsResponse.statusCode})`,
+        `Unable to get records for app ${appId} with fields ${fieldIds.join(', ')}: ${recordsResponse.message} (${recordsResponse.statusCode})`,
       );
     }
 
@@ -194,12 +174,8 @@ export async function getAppId(client: OnspringClient, appName: string) {
   throw new Error(`App ${appName} not found`);
 }
 
-export async function getFieldsByName(
-  client: OnspringClient,
-  appId: number,
-  fields: string[],
-) {
-  const fieldsToFind = fields.map((field) => field.toLowerCase());
+export async function getFieldsByName(client: OnspringClient, appId: number, fields: string[]) {
+  const fieldsToFind = fields.map(field => field.toLowerCase());
   const foundFields: { [index: number]: Field } = {};
 
   for await (const field of getFields(client, appId)) {
@@ -213,21 +189,17 @@ export async function getFieldsByName(
   }
 
   if (fieldsToFind.length > 0) {
-    throw new Error(`Fields ${fieldsToFind.join(", ")} not found`);
+    throw new Error(`Fields ${fieldsToFind.join(', ')} not found`);
   }
 
   if (Object.keys(foundFields).length === 0) {
-    throw new Error("No fields found");
+    throw new Error('No fields found');
   }
 
   return foundFields;
 }
 
-export async function getReportId(
-  client: OnspringClient,
-  appId: number,
-  reportName: string,
-) {
+export async function getReportId(client: OnspringClient, appId: number, reportName: string) {
   for await (const report of getReports(client, appId)) {
     if (report.name.toLowerCase() === reportName.toLowerCase()) {
       return report.id;
@@ -237,12 +209,9 @@ export async function getReportId(
   throw new Error(`Report ${reportName} not found`);
 }
 
-export function buildOnxRecord(
-  record: Record,
-  requestedFields: { [index: number]: Field },
-) {
+export function buildOnxRecord(record: Record, requestedFields: { [index: number]: Field }) {
   if (record.recordId === null) {
-    throw new Error("Record ID is null");
+    throw new Error('Record ID is null');
   }
 
   const onxRecord: OnxRecord = {
@@ -264,7 +233,7 @@ export function buildOnxRecord(
 }
 
 export function parseKeysToInts(fields: { [index: number]: Field }) {
-  return Object.keys(fields).map((key) => parseInt(key, 10));
+  return Object.keys(fields).map(key => parseInt(key, 10));
 }
 
 export function handleError(msg: string, error: unknown): CallToolResult {
@@ -273,19 +242,16 @@ export function handleError(msg: string, error: unknown): CallToolResult {
   let errorMessage = msg;
 
   if (error instanceof Error && error.message) {
-    errorMessage = errorMessage + ": " + error.message;
+    errorMessage = errorMessage + ': ' + error.message;
   }
 
   return {
     isError: true,
-    content: [{ type: "text", text: errorMessage }],
+    content: [{ type: 'text', text: errorMessage }],
   };
 }
 
-export function filterFieldsByName(
-  fields: { [index: number]: Field },
-  fieldNames: string[],
-) {
+export function filterFieldsByName(fields: { [index: number]: Field }, fieldNames: string[]) {
   return Object.entries(fields).reduce(
     (acc, [key, field]) => {
       if (fieldNames.includes(field.name)) {

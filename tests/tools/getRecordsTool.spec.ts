@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { getRecordsTool } from "../../src/tools";
-import { FieldType, Record, StringRecordValue } from "onspring-api-sdk";
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { getRecordsTool } from '../../src/tools';
+import { FieldType, Record, StringRecordValue } from 'onspring-api-sdk';
 
-describe("getRecordsTool", () => {
+describe('getRecordsTool', () => {
   const OnspringClient = vi.fn();
   const mockClient = new OnspringClient();
   const handlerExtras = {
@@ -11,7 +11,7 @@ describe("getRecordsTool", () => {
   };
 
   beforeEach(() => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -19,20 +19,18 @@ describe("getRecordsTool", () => {
     vi.restoreAllMocks();
   });
 
-  test("it should require an onspring client", () => {
-    expect(() =>
-      getRecordsTool(null as any, "appName", [], 1, 1),
-    ).toThrowError();
+  test('it should require an onspring client', () => {
+    expect(() => getRecordsTool(null!, 'appName', [], 1, 1)).toThrowError();
   });
 
-  test("it should return a function", () => {
-    const tool = getRecordsTool(mockClient, "appName", [], 1, 1);
+  test('it should return a function', () => {
+    const tool = getRecordsTool(mockClient, 'appName', [], 1, 1);
 
-    expect(typeof tool).toBe("function");
+    expect(typeof tool).toBe('function');
   });
 
-  test("it should return an error message when app is not found", async () => {
-    const tool = getRecordsTool(mockClient, "appName", [], 1, 1);
+  test('it should return an error message when app is not found', async () => {
+    const tool = getRecordsTool(mockClient, 'appName', [], 1, 1);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
@@ -49,21 +47,21 @@ describe("getRecordsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get records: App appName not found",
+          type: 'text',
+          text: 'Unable to get records: App appName not found',
         },
       ],
     });
   });
 
-  test("it should return an error message when one or more fields are not found", async () => {
-    const tool = getRecordsTool(mockClient, "users", ["status"], 1, 1);
+  test('it should return an error message when one or more fields are not found', async () => {
+    const tool = getRecordsTool(mockClient, 'users', ['status'], 1, 1);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "users" }],
+        items: [{ id: 1, name: 'users' }],
         totalPages: 1,
       },
     });
@@ -83,21 +81,21 @@ describe("getRecordsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get records: Fields status not found",
+          type: 'text',
+          text: 'Unable to get records: Fields status not found',
         },
       ],
     });
   });
 
-  test("it should return an error message when fails to get records", async () => {
-    const tool = getRecordsTool(mockClient, "users", ["status"], 1, 1);
+  test('it should return an error message when fails to get records', async () => {
+    const tool = getRecordsTool(mockClient, 'users', ['status'], 1, 1);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "users" }],
+        items: [{ id: 1, name: 'users' }],
         totalPages: 1,
       },
     });
@@ -107,8 +105,8 @@ describe("getRecordsTool", () => {
       statusCode: 200,
       data: {
         items: [
-          { id: 1, name: "status", type: FieldType.Text },
-          { id: 2, name: "name", type: FieldType.Text },
+          { id: 1, name: 'status', type: FieldType.Text },
+          { id: 2, name: 'name', type: FieldType.Text },
         ],
         totalPages: 1,
       },
@@ -116,7 +114,7 @@ describe("getRecordsTool", () => {
 
     mockClient.getRecordsByAppId = vi.fn().mockResolvedValue({
       isSuccessful: false,
-      message: "Oh no!",
+      message: 'Oh no!',
       statusCode: 500,
     });
 
@@ -126,21 +124,21 @@ describe("getRecordsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get records: Unable to get records for app 1 with fields 1: Oh no! (500)",
+          type: 'text',
+          text: 'Unable to get records: Unable to get records for app 1 with fields 1: Oh no! (500)',
         },
       ],
     });
   });
 
-  test("it should return an error message when there is no data", async () => {
-    const tool = getRecordsTool(mockClient, "users", ["status"], 1, 1);
+  test('it should return an error message when there is no data', async () => {
+    const tool = getRecordsTool(mockClient, 'users', ['status'], 1, 1);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "users" }],
+        items: [{ id: 1, name: 'users' }],
         totalPages: 1,
       },
     });
@@ -150,8 +148,8 @@ describe("getRecordsTool", () => {
       statusCode: 200,
       data: {
         items: [
-          { id: 1, name: "status", type: FieldType.Text },
-          { id: 2, name: "name", type: FieldType.Text },
+          { id: 1, name: 'status', type: FieldType.Text },
+          { id: 2, name: 'name', type: FieldType.Text },
         ],
         totalPages: 1,
       },
@@ -159,7 +157,7 @@ describe("getRecordsTool", () => {
 
     mockClient.getRecordsByAppId = vi.fn().mockResolvedValue({
       isSuccessful: true,
-      message: "Oh no!",
+      message: 'Oh no!',
       statusCode: 200,
       data: null,
     });
@@ -170,21 +168,21 @@ describe("getRecordsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get records: Unable to get records for app 1 with fields 1: Oh no! (200)",
+          type: 'text',
+          text: 'Unable to get records: Unable to get records for app 1 with fields 1: Oh no! (200)',
         },
       ],
     });
   });
 
-  test("it should return a list of records when getRecords is successful and has one page", async () => {
-    const tool = getRecordsTool(mockClient, "users", ["status"], 1, 1);
+  test('it should return a list of records when getRecords is successful and has one page', async () => {
+    const tool = getRecordsTool(mockClient, 'users', ['status'], 1, 1);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "users" }],
+        items: [{ id: 1, name: 'users' }],
         totalPages: 1,
       },
     });
@@ -194,21 +192,18 @@ describe("getRecordsTool", () => {
       statusCode: 200,
       data: {
         items: [
-          { id: 1, name: "status", type: FieldType.Text },
-          { id: 2, name: "name", type: FieldType.Text },
+          { id: 1, name: 'status', type: FieldType.Text },
+          { id: 2, name: 'name', type: FieldType.Text },
         ],
         totalPages: 1,
       },
     });
 
     const testRecords = [
-      new Record(1, 1, [
-        new StringRecordValue(1, "active"),
-        new StringRecordValue(2, "John Doe"),
-      ]),
+      new Record(1, 1, [new StringRecordValue(1, 'active'), new StringRecordValue(2, 'John Doe')]),
       new Record(1, 2, [
-        new StringRecordValue(1, "inactive"),
-        new StringRecordValue(2, "Jane Doe"),
+        new StringRecordValue(1, 'inactive'),
+        new StringRecordValue(2, 'Jane Doe'),
       ]),
     ];
 
@@ -227,20 +222,20 @@ describe("getRecordsTool", () => {
     expect(result).toEqual({
       content: [
         {
-          type: "text",
+          type: 'text',
           text: JSON.stringify({
             appId: 1,
             records: [
               {
                 recordId: 1,
                 data: {
-                  status: "active",
+                  status: 'active',
                 },
               },
               {
                 recordId: 2,
                 data: {
-                  status: "inactive",
+                  status: 'inactive',
                 },
               },
             ],
@@ -252,14 +247,14 @@ describe("getRecordsTool", () => {
     });
   });
 
-  test("it should return a list of records when getRecords is successful and has multiple pages", async () => {
-    const tool = getRecordsTool(mockClient, "users", ["status"], 1, 2);
+  test('it should return a list of records when getRecords is successful and has multiple pages', async () => {
+    const tool = getRecordsTool(mockClient, 'users', ['status'], 1, 2);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
       statusCode: 200,
       data: {
-        items: [{ id: 1, name: "users" }],
+        items: [{ id: 1, name: 'users' }],
         totalPages: 1,
       },
     });
@@ -269,21 +264,18 @@ describe("getRecordsTool", () => {
       statusCode: 200,
       data: {
         items: [
-          { id: 1, name: "status", type: FieldType.Text },
-          { id: 2, name: "name", type: FieldType.Text },
+          { id: 1, name: 'status', type: FieldType.Text },
+          { id: 2, name: 'name', type: FieldType.Text },
         ],
         totalPages: 1,
       },
     });
 
     const testRecords = [
-      new Record(1, 1, [
-        new StringRecordValue(1, "active"),
-        new StringRecordValue(2, "John Doe"),
-      ]),
+      new Record(1, 1, [new StringRecordValue(1, 'active'), new StringRecordValue(2, 'John Doe')]),
       new Record(1, 2, [
-        new StringRecordValue(1, "inactive"),
-        new StringRecordValue(2, "Jane Doe"),
+        new StringRecordValue(1, 'inactive'),
+        new StringRecordValue(2, 'Jane Doe'),
       ]),
     ];
 
@@ -313,20 +305,20 @@ describe("getRecordsTool", () => {
     expect(result).toEqual({
       content: [
         {
-          type: "text",
+          type: 'text',
           text: JSON.stringify({
             appId: 1,
             records: [
               {
                 recordId: 1,
                 data: {
-                  status: "active",
+                  status: 'active',
                 },
               },
               {
                 recordId: 2,
                 data: {
-                  status: "inactive",
+                  status: 'inactive',
                 },
               },
             ],

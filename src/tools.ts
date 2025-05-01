@@ -1,4 +1,4 @@
-import { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ToolCallback } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import {
   DataFormat,
@@ -10,7 +10,7 @@ import {
   ListField,
   OnspringClient,
   ReportDataType,
-} from "onspring-api-sdk";
+} from 'onspring-api-sdk';
 
 import {
   buildOnxRecord,
@@ -27,19 +27,13 @@ import {
   OnxRecord,
   parseKeysToInts,
   queryRecords,
-} from "./utils.js";
+} from './utils.js';
 
-import {
-  convertFilterToString,
-  Filter,
-  getFieldNamesFromFilter,
-} from "./filter.js";
+import { convertFilterToString, Filter, getFieldNamesFromFilter } from './filter.js';
 
 export function checkConnectionTool(client: OnspringClient): ToolCallback {
   if (!client) {
-    throw new Error(
-      "Unable to create checkConnectionTool because client is not set",
-    );
+    throw new Error('Unable to create checkConnectionTool because client is not set');
   }
 
   return async () => {
@@ -47,19 +41,17 @@ export function checkConnectionTool(client: OnspringClient): ToolCallback {
       const canConnect = await client.canConnect();
 
       return {
-        content: [
-          { type: "text", text: canConnect ? "Connected" : "Not connected" },
-        ],
+        content: [{ type: 'text', text: canConnect ? 'Connected' : 'Not connected' }],
       };
     } catch (error) {
-      return handleError("Unable to check connection", error);
+      return handleError('Unable to check connection', error);
     }
   };
 }
 
 export function getAppsTool(client: OnspringClient): ToolCallback {
   if (!client) {
-    throw new Error("Unable to create getAppsTool because client is not set");
+    throw new Error('Unable to create getAppsTool because client is not set');
   }
 
   return async () => {
@@ -71,20 +63,17 @@ export function getAppsTool(client: OnspringClient): ToolCallback {
       }
 
       return {
-        content: [{ type: "text", text: JSON.stringify(apps) }],
+        content: [{ type: 'text', text: JSON.stringify(apps) }],
       };
     } catch (error) {
-      return handleError("Unable to get apps", error);
+      return handleError('Unable to get apps', error);
     }
   };
 }
 
-export function getFieldsTool(
-  client: OnspringClient,
-  name: string,
-): ToolCallback {
+export function getFieldsTool(client: OnspringClient, name: string): ToolCallback {
   if (!client) {
-    throw new Error("Unable to create getFieldsTool because client is not set");
+    throw new Error('Unable to create getFieldsTool because client is not set');
   }
 
   return async () => {
@@ -121,13 +110,13 @@ export function getFieldsTool(
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(fields),
           },
         ],
       };
     } catch (error) {
-      return handleError("Unable to get fields", error);
+      return handleError('Unable to get fields', error);
     }
   };
 }
@@ -140,9 +129,7 @@ export function getRecordsTool(
   numberOfPages: number,
 ): ToolCallback {
   if (!client) {
-    throw new Error(
-      "Unable to create getRecordsTool because client is not set",
-    );
+    throw new Error('Unable to create getRecordsTool because client is not set');
   }
 
   return async () => {
@@ -157,13 +144,7 @@ export function getRecordsTool(
         totalRecords: 0,
       };
 
-      const pages = getRecords(
-        client,
-        appId,
-        requestedFieldIds,
-        pageNumber,
-        numberOfPages,
-      );
+      const pages = getRecords(client, appId, requestedFieldIds, pageNumber, numberOfPages);
 
       for await (const page of pages) {
         for (const record of page.records) {
@@ -177,25 +158,20 @@ export function getRecordsTool(
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(response),
           },
         ],
       };
     } catch (error) {
-      return handleError("Unable to get records", error);
+      return handleError('Unable to get records', error);
     }
   };
 }
 
-export function getReportsTool(
-  client: OnspringClient,
-  appName: string,
-): ToolCallback {
+export function getReportsTool(client: OnspringClient, appName: string): ToolCallback {
   if (!client) {
-    throw new Error(
-      "Unable to create getReportsTool because client is not set",
-    );
+    throw new Error('Unable to create getReportsTool because client is not set');
   }
 
   return async () => {
@@ -210,13 +186,13 @@ export function getReportsTool(
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(reports),
           },
         ],
       };
     } catch (error) {
-      return handleError("Unable to get reports", error);
+      return handleError('Unable to get reports', error);
     }
   };
 }
@@ -228,20 +204,14 @@ export function getReportDataTool(
   dataType: ReportDataType = ReportDataType.ReportData,
 ): ToolCallback {
   if (!client) {
-    throw new Error(
-      "Unable to create getReportDataTool because client is not set",
-    );
+    throw new Error('Unable to create getReportDataTool because client is not set');
   }
 
   return async () => {
     try {
       const appId = await getAppId(client, appName);
       const reportId = await getReportId(client, appId, reportName);
-      const response = await client.getReportById(
-        reportId,
-        DataFormat.Formatted,
-        dataType,
-      );
+      const response = await client.getReportById(reportId, DataFormat.Formatted, dataType);
 
       if (response.isSuccessful === false || response.data === null) {
         throw new Error(`${response.message} (${response.statusCode})`);
@@ -265,13 +235,13 @@ export function getReportDataTool(
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(reportData),
           },
         ],
       };
     } catch (error) {
-      return handleError("Unable to get report data", error);
+      return handleError('Unable to get report data', error);
     }
   };
 }
@@ -285,9 +255,7 @@ export function queryRecordsTool(
   numberOfPages: number,
 ): ToolCallback {
   if (!client) {
-    throw new Error(
-      "Unable to create queryRecordsTool because client is not set",
-    );
+    throw new Error('Unable to create queryRecordsTool because client is not set');
   }
 
   return async () => {
@@ -297,10 +265,7 @@ export function queryRecordsTool(
       const fieldsToLookUp = Array.from(new Set([...fields, ...filterFields]));
       const fieldsNeeded = await getFieldsByName(client, appId, fieldsToLookUp);
 
-      const fieldsNeededForFilter = filterFieldsByName(
-        fieldsNeeded,
-        Array.from(filterFields),
-      );
+      const fieldsNeededForFilter = filterFieldsByName(fieldsNeeded, Array.from(filterFields));
 
       const fieldsNeededForQuery = filterFieldsByName(fieldsNeeded, fields);
 
@@ -336,13 +301,13 @@ export function queryRecordsTool(
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: JSON.stringify(response),
           },
         ],
       };
     } catch (error) {
-      return handleError("Unable to get records", error);
+      return handleError('Unable to get records', error);
     }
   };
 }
@@ -355,7 +320,7 @@ export function getFileTool(
   fileName: string,
 ): ToolCallback {
   if (!client) {
-    throw new Error("Unable to create getFileTool because client is not set");
+    throw new Error('Unable to create getFileTool because client is not set');
   }
 
   return async () => {
@@ -388,17 +353,12 @@ export function getFileTool(
 
       const recordResponse = await client.getRecordById(getRecordRequest);
 
-      if (
-        recordResponse.isSuccessful === false ||
-        recordResponse.data === null
-      ) {
-        throw new Error(
-          `${recordResponse.message} (${recordResponse.statusCode})`,
-        );
+      if (recordResponse.isSuccessful === false || recordResponse.data === null) {
+        throw new Error(`${recordResponse.message} (${recordResponse.statusCode})`);
       }
 
       const fieldValue = recordResponse.data.fieldData.find(
-        (field) => field.fieldId === targetField.id,
+        field => field.fieldId === targetField.id,
       );
 
       if (fieldValue === undefined) {
@@ -408,7 +368,7 @@ export function getFileTool(
       let fileId: number | null = null;
 
       switch (targetField.type) {
-        case FieldType.Attachment:
+        case FieldType.Attachment: {
           const attachmentFieldValue = fieldValue.asAttachmentArray();
 
           for (const file of attachmentFieldValue.values()) {
@@ -424,21 +384,16 @@ export function getFileTool(
             }
           }
           break;
+        }
         default:
-          throw new Error(
-            `Field ${fieldName} is not an attachment or image field`,
-          );
+          throw new Error(`Field ${fieldName} is not an attachment or image field`);
       }
 
       if (fileId === null) {
         throw new Error(`File ${fileName} not found in field ${fieldName}`);
       }
 
-      const fileResponse = await client.getFileById(
-        recordId,
-        targetField.id,
-        fileId,
-      );
+      const fileResponse = await client.getFileById(recordId, targetField.id, fileId);
 
       if (fileResponse.isSuccessful === false || fileResponse.data === null) {
         throw new Error(`${fileResponse.message} (${fileResponse.statusCode})`);
@@ -459,19 +414,19 @@ export function getFileTool(
 
       const fileBuffer = Buffer.concat(chunks);
 
-      if (fileResponse.data.contentType.startsWith("text/")) {
+      if (fileResponse.data.contentType.startsWith('text/')) {
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `File ${fileName} retrieved successfully`,
             },
             {
-              type: "resource",
+              type: 'resource',
               resource: {
-                blob: fileBuffer.toString("utf-8"),
+                blob: fileBuffer.toString('utf-8'),
                 mimeType: fileResponse.data.contentType,
-                uri: "",
+                uri: '',
               },
             },
           ],
@@ -481,21 +436,21 @@ export function getFileTool(
       return {
         content: [
           {
-            type: "text",
+            type: 'text',
             text: `File ${fileName} retrieved successfully`,
           },
           {
-            type: "resource",
+            type: 'resource',
             resource: {
-              blob: fileBuffer.toString("base64"),
+              blob: fileBuffer.toString('base64'),
               mimeType: fileResponse.data.contentType,
-              uri: "",
+              uri: '',
             },
           },
         ],
       };
     } catch (error) {
-      return handleError("Unable to get file", error);
+      return handleError('Unable to get file', error);
     }
   };
 }

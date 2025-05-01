@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { getAppsTool } from "../../src/tools";
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { getAppsTool } from '../../src/tools';
 
-describe("getAppsTool", () => {
+describe('getAppsTool', () => {
   const OnspringClient = vi.fn();
   const mockClient = new OnspringClient();
   const handlerExtras = {
@@ -10,7 +10,7 @@ describe("getAppsTool", () => {
   };
 
   beforeEach(() => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -18,22 +18,22 @@ describe("getAppsTool", () => {
     vi.restoreAllMocks();
   });
 
-  test("it should require an onspring client", () => {
-    expect(() => getAppsTool(null as any)).toThrowError();
+  test('it should require an onspring client', () => {
+    expect(() => getAppsTool(null!)).toThrowError();
   });
 
-  test("it should return a function", () => {
+  test('it should return a function', () => {
     const tool = getAppsTool(mockClient);
 
-    expect(typeof tool).toBe("function");
+    expect(typeof tool).toBe('function');
   });
 
-  test("it should return an error message when fails to get apps", async () => {
+  test('it should return an error message when fails to get apps', async () => {
     const tool = getAppsTool(mockClient);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: false,
-      message: "Oh no!",
+      message: 'Oh no!',
       statusCode: 500,
     });
 
@@ -43,19 +43,19 @@ describe("getAppsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get apps: Oh no! (500)",
+          type: 'text',
+          text: 'Unable to get apps: Oh no! (500)',
         },
       ],
     });
   });
 
-  test("it should return an error message when there is no data", async () => {
+  test('it should return an error message when there is no data', async () => {
     const tool = getAppsTool(mockClient);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
-      message: "Oh no!",
+      message: 'Oh no!',
       statusCode: 200,
       data: null,
     });
@@ -66,17 +66,17 @@ describe("getAppsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get apps: Oh no! (200)",
+          type: 'text',
+          text: 'Unable to get apps: Oh no! (200)',
         },
       ],
     });
   });
 
-  test("it should return an error message if getApps throws an error", async () => {
+  test('it should return an error message if getApps throws an error', async () => {
     const tool = getAppsTool(mockClient);
 
-    mockClient.getApps = vi.fn().mockRejectedValue(new Error("Oh no!"));
+    mockClient.getApps = vi.fn().mockRejectedValue(new Error('Oh no!'));
 
     const result = await tool(handlerExtras);
 
@@ -84,24 +84,24 @@ describe("getAppsTool", () => {
       isError: true,
       content: [
         {
-          type: "text",
-          text: "Unable to get apps: Oh no!",
+          type: 'text',
+          text: 'Unable to get apps: Oh no!',
         },
       ],
     });
   });
 
-  test("it should return a list of apps when getApps is successful and has one page", async () => {
+  test('it should return a list of apps when getApps is successful and has one page', async () => {
     const tool = getAppsTool(mockClient);
 
     mockClient.getApps = vi.fn().mockResolvedValue({
       isSuccessful: true,
-      message: "Oh no!",
+      message: 'Oh no!',
       statusCode: 200,
       data: {
         items: [
-          { id: 1, name: "App 1" },
-          { id: 2, name: "App 2" },
+          { id: 1, name: 'App 1' },
+          { id: 2, name: 'App 2' },
         ],
         totalPages: 1,
       },
@@ -112,38 +112,38 @@ describe("getAppsTool", () => {
     expect(result).toEqual({
       content: [
         {
-          type: "text",
-          text: JSON.stringify(["App 1", "App 2"]),
+          type: 'text',
+          text: JSON.stringify(['App 1', 'App 2']),
         },
       ],
     });
   });
 
-  test("it should return a list of apps when getApps is successful and has multiple pages", async () => {
+  test('it should return a list of apps when getApps is successful and has multiple pages', async () => {
     const tool = getAppsTool(mockClient);
 
     mockClient.getApps = vi
       .fn()
       .mockResolvedValueOnce({
         isSuccessful: true,
-        message: "Oh no!",
+        message: 'Oh no!',
         statusCode: 200,
         data: {
           items: [
-            { id: 1, name: "App 1" },
-            { id: 2, name: "App 2" },
+            { id: 1, name: 'App 1' },
+            { id: 2, name: 'App 2' },
           ],
           totalPages: 2,
         },
       })
       .mockResolvedValueOnce({
         isSuccessful: true,
-        message: "Oh no!",
+        message: 'Oh no!',
         statusCode: 200,
         data: {
           items: [
-            { id: 3, name: "App 3" },
-            { id: 4, name: "App 4" },
+            { id: 3, name: 'App 3' },
+            { id: 4, name: 'App 4' },
           ],
           totalPages: 2,
         },
@@ -154,11 +154,10 @@ describe("getAppsTool", () => {
     expect(result).toEqual({
       content: [
         {
-          type: "text",
-          text: JSON.stringify(["App 1", "App 2", "App 3", "App 4"]),
+          type: 'text',
+          text: JSON.stringify(['App 1', 'App 2', 'App 3', 'App 4']),
         },
       ],
     });
   });
 });
-

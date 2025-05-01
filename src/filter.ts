@@ -4,12 +4,12 @@ import {
   FilterOperators,
   FormulaField,
   FormulaOutputType,
-} from "onspring-api-sdk";
+} from 'onspring-api-sdk';
 
-import { z } from "zod";
+import { z } from 'zod';
 
 export const ruleSchema = z.object({
-  type: z.literal("rule"),
+  type: z.literal('rule'),
   fieldName: z.string(),
   operator: z.nativeEnum(FilterOperators),
   value: z.string().nullable(),
@@ -18,48 +18,40 @@ export const ruleSchema = z.object({
 export type Rule = z.infer<typeof ruleSchema>;
 
 type AndGroup = {
-  type: "and";
+  type: 'and';
   rules: Filter[];
 };
 
 type OrGroup = {
-  type: "or";
+  type: 'or';
   rules: Filter[];
 };
 
 type NotGroup = {
-  type: "not";
+  type: 'not';
   rule: Filter;
 };
 
 const andGroupSchema: z.ZodType<AndGroup> = z.object({
-  type: z.literal("and"),
+  type: z.literal('and'),
   rules: z.array(z.lazy(() => filterSchema)),
 });
 
 const orGroupSchema: z.ZodType<OrGroup> = z.object({
-  type: z.literal("or"),
+  type: z.literal('or'),
   rules: z.array(z.lazy(() => filterSchema)),
 });
 
 const notGroupSchema: z.ZodType<NotGroup> = z.object({
-  type: z.literal("not"),
+  type: z.literal('not'),
   rule: z.lazy(() => filterSchema),
 });
 
-export const filterSchema = z.union([
-  ruleSchema,
-  andGroupSchema,
-  orGroupSchema,
-  notGroupSchema,
-]);
+export const filterSchema = z.union([ruleSchema, andGroupSchema, orGroupSchema, notGroupSchema]);
 
 export type Filter = z.infer<typeof filterSchema>;
 
-export function convertFilterToString(
-  filter: Filter,
-  fields: { [index: number]: Field },
-) {
+export function convertFilterToString(filter: Filter, fields: { [index: number]: Field }) {
   type StackItem = string | Filter;
 
   const stack: StackItem[] = [filter];
@@ -72,22 +64,22 @@ export function convertFilterToString(
       break;
     }
 
-    if (typeof current === "string") {
+    if (typeof current === 'string') {
       output.push(current);
       continue;
     }
 
     switch (current.type) {
-      case "rule":
+      case 'rule':
         output.push(formatRule(current, fields));
         break;
-      case "not":
+      case 'not':
         stack.push(current.rule);
         stack.push(`${current.type} `);
         break;
-      case "and":
-      case "or":
-        stack.push(")");
+      case 'and':
+      case 'or': {
+        stack.push(')');
 
         const rules = [...current.rules].reverse();
 
@@ -99,14 +91,15 @@ export function convertFilterToString(
           stack.push(rule);
         }
 
-        stack.push("(");
+        stack.push('(');
         break;
+      }
       default:
-        throw new Error("Unknown filter type");
+        throw new Error('Unknown filter type');
     }
   }
 
-  return output.join("");
+  return output.join('');
 }
 
 export function getFieldNamesFromFilter(filter: Filter) {
@@ -121,17 +114,17 @@ export function getFieldNamesFromFilter(filter: Filter) {
       break;
     }
 
-    if (current.type === "rule") {
+    if (current.type === 'rule') {
       names.add(current.fieldName);
       continue;
     }
 
-    if (current.type === "not") {
+    if (current.type === 'not') {
       stack.push(current.rule);
       continue;
     }
 
-    if (current.type === "and" || current.type === "or") {
+    if (current.type === 'and' || current.type === 'or') {
       stack.push(...current.rules);
       continue;
     }

@@ -17,7 +17,11 @@
     "test:ui": "vitest --ui --api 9527",
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -w -p tsconfig.build.json",
-    "inspect": "npm run build && npx @modelcontextprotocol/inspector node --env-file ./.env ./build/index.js"
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node --env-file ./.env ./build/index.js",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts, --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
   },
   "keywords": [
     "modelcontextprotocol",
@@ -37,6 +41,8 @@
     "@vitest/coverage-istanbul": "^3.1.1",
     "@vitest/ui": "^3.1.1",
     "eslint": "^9.25.1",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.1",
     "vitest": "^3.1.1"

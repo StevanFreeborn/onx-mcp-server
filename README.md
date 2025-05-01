@@ -71,7 +71,7 @@ In order to use the server, you will need to configure it in the MCP client of y
 The server requires that the following environment variables are set:
 
 | Variable            | Description                       | Default                    |
-|---------------------|-----------------------------------|----------------------------|
+| ------------------- | --------------------------------- | -------------------------- |
 | `ONSPRING_API_KEY`  | Your Onspring API key             | (Required)                 |
 | `ONSPRING_BASE_URL` | The base URL for the Onspring API | <https://api.onspring.com> |
 
@@ -88,10 +88,7 @@ The server requires that the following environment variables are set:
   "mcpServers": {
     "filesystem": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@stevanfreeborn/onx-mcp-server",
-      ]
+      "args": ["-y", "@stevanfreeborn/onx-mcp-server"]
     }
   }
 }
