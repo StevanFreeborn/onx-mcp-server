@@ -86,7 +86,7 @@ The server requires that the following environment variables are set:
 ```json
 {
   "mcpServers": {
-    "filesystem": {
+    "onx-mcp-server": {
       "command": "npx",
       "args": ["-y", "@stevanfreeborn/onx-mcp-server"]
     }
