@@ -88,7 +88,11 @@ The server requires that the following environment variables are set:
   "mcpServers": {
     "onx-mcp-server": {
       "command": "npx",
-      "args": ["-y", "@stevanfreeborn/onx-mcp-server"]
+      "args": ["-y", "@stevanfreeborn/onx-mcp-server"],
+      "env": {
+        "ONSPRING_API_KEY": "your_onspring_api_key",
+        "ONSPRING_BASE_URL": "https://api.onspring.com"
+      }
     }
   }
 }
