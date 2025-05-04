@@ -1,5 +1,5 @@
 {
-  "name": "@stevanfreeborn/onx-mcp-server",
+  "name": "onx-mcp-server",
   "version": "0.0.0-semantic-release",
   "description": "A server for the Model Context Protocol (MCP) that integrates with Onspring's API.",
   "main": "index.js",
