@@ -39,6 +39,10 @@ jobs:
         with:
           node-version: lts/*
           registry-url: https://registry.npmjs.org/
+      - name: Setup git
+        run: |
+          git config --local user.email "65925598+StevanFreeborn@users.noreply.github.com"
+          git config --local user.name "Stevan Freeborn"
       - name: Install dependencies
         run: npm install
       - name: Download build
@@ -50,5 +54,5 @@ jobs:
         env: 
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
-        run: npx semantic-release --no-ci
+        run: npx semantic-release
 
