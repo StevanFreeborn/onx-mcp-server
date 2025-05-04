@@ -10,6 +10,24 @@ on:
     branches:
       - main
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: ./build
   publish:
     runs-on: ubuntu-latest
     steps:
@@ -21,12 +39,15 @@ jobs:
           node-version: lts/*
           registry-url: https://registry.npmjs.org/
       - name: Install dependencies
-        run: npm ci
-      - name: Build
-        run: npm run build
+        run: npm install
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: ./build
       - name: Publish
         env: 
-          GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
         run: npx semantic-release
 
