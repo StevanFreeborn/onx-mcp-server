@@ -34,13 +34,13 @@ This server provides a bridge between AI assistants and Onspring instances throu
 1. Install the package globally:
 
 ```bash
-npm install -g onx-mcp-server
+npm install -g @stevanfreeborn/onx-mcp-server
 ```
 
 Or use it directly via npx:
 
 ```bash
-npx onx-mcp-server
+npx @stevanfreeborn/onx-mcp-server
 ```
 
 ### Building from Source
