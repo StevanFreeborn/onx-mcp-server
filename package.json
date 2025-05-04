@@ -1,6 +1,6 @@
 {
   "name": "@stevanfreeborn/onx-mcp-server",
-  "version": "1.0.0",
+  "version": "0.0.0-semantic-release",
   "description": "A server for the Model Context Protocol (MCP) that integrates with Onspring's API.",
   "main": "index.js",
   "type": "module",
@@ -8,7 +8,10 @@
     "onx-mcp-server": "./build/index.js"
   },
   "files": [
-    "build"
+    "build",
+    "LICENSE.md",
+    "README.md",
+    "package.json"
   ],
   "scripts": {
     "start": "node build/index.js",
@@ -29,8 +32,24 @@
     "onspring",
     "server"
   ],
-  "author": "Stevan Freeborn",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/StevanFreeborn/onx-mcp-server.git"
+  },
+  "homepage": "https://github.com/StevanFreeborn/onx-mcp-server",
+  "bugs": {
+    "url": "https://github.com/StevanFreeborn/onx-mcp-server/issues",
+    "email": "stevan.freeborn@gmail.com"
+  },
+  "author": {
+    "name": "Stevan Freeborn",
+    "email": "stevan.freeborn@gmail.com",
+    "url": "https://stevanfreeborn.com"
+  },
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0",
     "onspring-api-sdk": "^1.0.7",
