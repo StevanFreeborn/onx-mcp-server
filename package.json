@@ -54,20 +54,20 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.9.0",
-    "onspring-api-sdk": "^1.0.7",
-    "zod": "^3.24.2"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "onspring-api-sdk": "^1.0.9",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.1",
-    "@types/node": "^22.14.1",
-    "@vitest/coverage-istanbul": "^3.1.1",
+    "@types/node": "^22.19.20",
+    "@vitest/coverage-istanbul": "^3.2.6",
     "@vitest/ui": "^3.1.1",
-    "eslint": "^9.25.1",
-    "globals": "^16.0.0",
-    "prettier": "^3.5.3",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.31.1",
+    "eslint": "^9.39.4",
+    "globals": "^16.5.0",
+    "prettier": "^3.8.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.61.0",
     "vitest": "^3.1.1"
   }
 }
